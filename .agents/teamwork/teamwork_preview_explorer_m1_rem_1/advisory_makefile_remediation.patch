@@ -1,0 +1,57 @@
+--- a/Makefile
++++ b/Makefile
+@@ -43,12 +43,16 @@
+ docker-up:
+ 	@echo "==> Starting ASESAMO Docker services..."
+ 	docker compose up -d
+-	@echo "==> Waiting for database readiness..."
+-	@until docker compose exec -T db pg_isready -U $(DB_USER) -d $(DB_NAME) > /dev/null 2>&1; do \
++	@echo "==> Waiting for database readiness (max 30s)..."
++	@for i in $$(seq 1 30); do \
++		if docker compose exec -T db pg_isready -U "$(DB_USER)" -d "$(DB_NAME)" > /dev/null 2>&1; then \
++			echo "✔ Docker services started and database is ready."; \
++			exit 0; \
++		fi; \
+ 		sleep 1; \
+-	done
+-	@echo "✔ Docker services started and database is ready."
+-
++	done; \
++	echo "✖ Database failed to become ready within 30 seconds."; \
++	exit 1
+ ## Stop docker-compose stack (preserves volumes)
+ docker-down:
+ 	@echo "==> Stopping ASESAMO Docker services..."
+@@ -80,19 +84,18 @@
+ 
+ ## Clear dirty state by forcing specific version (Usage: make migrate-force V=1)
+ migrate-force:
+-	@if [ -z "$(V)" ]; then \
+-		echo "✖ Error: Please specify version, e.g. make migrate-force V=1"; \
++	@if [ -z "$(V)" ] || ! echo "$(V)" | grep -qE '^[0-9]+$$'; then \
++		echo "✖ Error: Please specify numeric version, e.g. make migrate-force V=1"; \
+ 		exit 1; \
+ 	fi
+ 	@echo "==> Forcing migration version to $(V)..."
+-	docker compose run --rm migrate force $(V)
++	docker compose run --rm migrate force "$(V)"
+ 	@echo "✔ Migration version forced to $(V)."
+-
+ ## Seed database with deterministic test records
+ seed:
+ 	@echo "==> Seeding database with deterministic dev/test data..."
+ 	@if docker compose ps db --format '{{.State}}' 2>/dev/null | grep -q "running"; then \
+-		docker compose exec -T -e PGPASSWORD=$(DB_PASSWORD) db psql -U $(DB_USER) -d $(DB_NAME) < db/seeds/000001_seed_dev_data.sql; \
++		docker compose exec -T -e PGPASSWORD="$(DB_PASSWORD)" db psql -U "$(DB_USER)" -d "$(DB_NAME)" < db/seeds/000001_seed_dev_data.sql; \
+ 	else \
+ 		echo "✖ Error: db container is not running. Run 'make docker-up' first."; \
+ 		exit 1; \
+@@ -101,7 +104,7 @@
+ 
+ ## Open interactive psql shell
+ db-shell:
+-	docker compose exec -e PGPASSWORD=$(DB_PASSWORD) db psql -U $(DB_USER) -d $(DB_NAME)
++	docker compose exec -e PGPASSWORD="$(DB_PASSWORD)" db psql -U "$(DB_USER)" -d "$(DB_NAME)"
+ 
+ ## Run backend unit tests
+ test:

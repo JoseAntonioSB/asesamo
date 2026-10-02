@@ -1,0 +1,66 @@
+# ============================================================
+# ASESAMO — Git Ignore Configuration
+# ============================================================
+
+# Operating System Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Environment and Secret Files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.*.local
+!.env.example
+
+# Logs and Debugging
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Node.js & Next.js (asesamo-web)
+node_modules/
+.next/
+out/
+build/
+dist/
+.npm/
+*.tsbuildinfo
+
+# Go (asesamo-api)
+bin/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+cover.out
+
+# IDE and Editor Cache
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+*.sublime-project
+*.sublime-workspace
+
+# Test Coverage
+coverage/
+.nyc_output/
+
+# Temporary directories and runtime data
+tmp/
+scratch/
