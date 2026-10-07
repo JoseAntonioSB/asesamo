@@ -82,8 +82,7 @@ func TestAdversarial_LoginUseCase(t *testing.T) {
 		assert.Equal(t, appErr1.HTTPStatus, appErr2.HTTPStatus, "HTTP statuses must be identical (401)")
 	})
 
-	t.Run("VULNERABILITY: Inactive user enumeration before password validation", func(t *testing.T) {
-		// Even with WRONG password, inactive user returns ErrUserInactive instead of ErrInvalidCredentials!
+	t.Run("VERIFY: Inactive user enumeration prevention - wrong password returns INVALID_CREDENTIALS", func(t *testing.T) {
 		mockRepo := new(MockUserRepository)
 		userCopy := *inactiveUser
 		mockRepo.On("GetByEmail", mock.Anything, "inactive.guard@asesamo.com").Return(&userCopy, nil)
@@ -100,9 +99,8 @@ func TestAdversarial_LoginUseCase(t *testing.T) {
 		appErr, ok := err.(*domainErrors.AppError)
 		require.True(t, ok)
 
-		// This confirms that the system reveals the account exists and is inactive without requiring valid credentials
 		t.Logf("Observed error code for inactive account with WRONG password: %s (%s)", appErr.Code, appErr.Message)
-		assert.Equal(t, "USER_INACTIVE", appErr.Code)
+		assert.Equal(t, "INVALID_CREDENTIALS", appErr.Code)
 	})
 
 	t.Run("EMPIRICAL TIMING ANALYSIS: Compare latency of nonexistent user vs wrong password", func(t *testing.T) {
@@ -134,13 +132,14 @@ func TestAdversarial_LoginUseCase(t *testing.T) {
 		}
 		durationWrongPassword := time.Since(startWrongPassword) / iterations
 
+		timingRatio := float64(durationWrongPassword) / float64(durationNonExistent)
 		t.Logf("Timing side-channel empirical measurement:")
 		t.Logf("  Avg latency for non-existent user: %v", durationNonExistent)
 		t.Logf("  Avg latency for wrong password (bcrypt): %v", durationWrongPassword)
-		t.Logf("  Timing ratio (wrong password / nonexistent): %.1fx", float64(durationWrongPassword)/float64(durationNonExistent))
+		t.Logf("  Timing ratio (wrong password / nonexistent): %.2fx", timingRatio)
 
-		// Bcrypt comparison is several orders of magnitude slower than not-found return
-		assert.True(t, durationWrongPassword > 10*durationNonExistent,
-			"Observable timing discrepancy between non-existent user and wrong password")
+		// Timing must be balanced within a reasonable margin, proving both run bcrypt cost 10
+		assert.True(t, timingRatio < 2.5 && timingRatio > 0.4,
+			"Timing between non-existent user and wrong password must be balanced (indistinguishable)")
 	})
 }

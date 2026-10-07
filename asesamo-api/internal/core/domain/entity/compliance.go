@@ -14,12 +14,15 @@ type WorkerAffiliation struct {
 	IMSSNumber     *string    `json:"imss_number,omitempty"`
 	JobTitle       *string    `json:"job_title,omitempty"`
 	AvatarR2Key    *string    `json:"avatar_r2_key,omitempty"`
-	IsActive       bool       `json:"is_active"`
-	ContractorID   uuid.UUID  `json:"contractor_id"`
-	ContractorName string     `json:"contractor_name"`
-	ContractorRFC  *string    `json:"contractor_rfc,omitempty"`
-	REPSENumber    *string    `json:"repse_number,omitempty"`
-	PlantStatus    string     `json:"plant_status"` // 'active' | 'pending' | 'suspended' | 'blocked'
+	IsActive           bool       `json:"is_active"`
+	UserIsActive       bool       `json:"user_is_active"`
+	WorkerIsActive     bool       `json:"worker_is_active"`
+	ContractorIsActive bool       `json:"contractor_is_active"`
+	ContractorID       uuid.UUID  `json:"contractor_id"`
+	ContractorName     string     `json:"contractor_name"`
+	ContractorRFC      *string    `json:"contractor_rfc,omitempty"`
+	REPSENumber        *string    `json:"repse_number,omitempty"`
+	PlantStatus        string     `json:"plant_status"` // 'active' | 'pending' | 'suspended' | 'blocked'
 }
 
 // DocumentWithTypeCode holds document data along with its document type code.

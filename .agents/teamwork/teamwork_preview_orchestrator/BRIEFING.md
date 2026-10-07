@@ -1,4 +1,4 @@
-# BRIEFING — 2026-10-01T22:57:45Z
+# BRIEFING — 2026-10-07T16:21:40Z
 
 ## Mission
 Deliver the complete Phase 1 MVP of ASESAMO per ORIGINAL_REQUEST.md, DEVELOPMENT_RULES.md, and db/migrations/000001_init.up.sql.
@@ -21,13 +21,13 @@ Deliver the complete Phase 1 MVP of ASESAMO per ORIGINAL_REQUEST.md, DEVELOPMENT
   1. Survey & Scope Mapping [done]
   2. E2E Testing Suite (Tiers 1-4) [done - TEST_READY.md published]
   3. Milestone 1: Database & Environment Scaffolding [done - Gate 2 PASSED]
-  4. Milestone 2: Backend Core & Authentication [in-progress - worker implementing asesamo-api]
-  5. Milestone 3: Access Verification Engine & Logging [pending]
-  6. Milestone 4: Frontend Web Interface (asesamo-web) [pending]
+  4. Milestone 2: Backend Core & Authentication [done - Gate 2 PASSED]
+  5. Milestone 3: Access Verification Engine & Logging [done - Gate PASSED]
+  6. Milestone 4: Frontend Web Interface (asesamo-web) [in-progress - Exploration]
   7. Milestone 5: Local Orchestration & Smoke Verification [pending]
   8. Milestone 6: Final E2E Test Pass & Hardening [pending]
-- **Current phase**: 2 (Milestone 2: Backend Core & Authentication)
-- **Current focus**: Milestone 2 Worker
+- **Current phase**: 2 (Milestone 4 Exploration)
+- **Current focus**: Milestone 4 Explorers (Next.js Setup, Auth/API Layer, Caseta Check-In Interface)
 
 ## 🔒 Key Constraints
 - Never write, modify, or create source code files directly.
@@ -40,23 +40,29 @@ Deliver the complete Phase 1 MVP of ASESAMO per ORIGINAL_REQUEST.md, DEVELOPMENT
 
 ## Current Parent
 - Conversation ID: e52065f8-f86f-4e76-a7f8-2ab4fb00e6c2
-- Updated: 2026-10-01T22:15:20Z
+- Updated: 2026-10-07T15:54:17Z
 
 ## Key Decisions Made
-- Architecture strictly follows DEVELOPMENT_RULES.md: Chi router, Clean Architecture, sqlc, golang-migrate, Next.js 14 App Router, Tailwind, shadcn/ui.
-- Milestone 1 successfully passed Gate 2 with 100% approval across all 5 verification agents.
-- Milestone 2 Explorers completed. M2 Worker dispatched to implement `asesamo-api`.
+- Milestone 1: Gate 2 PASSED (100% approval).
+- Milestone 2: Gate 2 PASSED (100% approval across all 5 verification agents).
+- Milestone 3: Gate PASSED (100% approval across all 5 verification agents).
+- Milestone 4: Frontend Web Interface (`asesamo-web`) initiated. Dispatched 3 parallel Explorers.
 
 ## Team Roster
 | Agent | Type | Work Item | Status | Conv ID |
 |-------|------|-----------|--------|---------|
-| explorer_m2_1 | teamwork_preview_explorer | M2 Clean Architecture Layout | completed | 36e8d6fd-2fa7-47fc-b0d0-c7fe5e26093c |
-| explorer_m2_2 | teamwork_preview_explorer | M2 DB Pool, Config & Endpoints | completed | 7e767c5b-e611-4a51-b457-e2ca492f5fe0 |
-| explorer_m2_3 | teamwork_preview_explorer | M2 Auth, Middlewares & Tests | completed | 0e964cdc-46ca-45fc-94f5-e1a219ead934 |
-| worker_m2_1 | teamwork_preview_worker | M2 Backend Core & Auth Implementation | in-progress | 2ddfcfa5-c67b-45b8-bff6-4910bfb354d4 |
+| explorer_m4_1 | teamwork_preview_explorer | M4 App Router Setup & UI System | completed | a0e2cb47-8d0c-4846-beb2-87ebfc8fe14c |
+| explorer_m4_2 | teamwork_preview_explorer | M4 Auth Flow, API Client & State | completed | 7be26eb0-e25d-441e-be89-229f0b205447 |
+| explorer_m4_3 | teamwork_preview_explorer | M4 Caseta UI, Scanner & Visual Cards | completed | 310655e1-8e12-4a8c-aba5-b788167ae1a4 |
+| worker_m4_1 | teamwork_preview_worker | M4 Web Frontend Implementation | completed | 6a154ee9-9c3f-49b1-96aa-cd2971a7dbff |
+| reviewer_m4_1 | teamwork_preview_reviewer | M4 App Router & Auth Review | in-progress | 2cec4619-b575-4172-af2a-1db967e978b9 |
+| reviewer_m4_2 | teamwork_preview_reviewer | M4 Caseta & API Review | in-progress | 16054bcb-c75e-4a4e-bb71-2bfa8ea6e347 |
+| challenger_m4_1 | teamwork_preview_challenger | M4 Functional Stress Challenge | in-progress | 1a76ce79-93ce-4662-b7d9-c0f873f3208e |
+| challenger_m4_2 | teamwork_preview_challenger | M4 Build & Type Stress Challenge | in-progress | ea219320-33dc-410c-b080-7f47aedef461 |
+| auditor_m4_1 | teamwork_preview_auditor | M4 Forensic Integrity Audit | in-progress | 59fbfbb6-29e7-4455-8ce9-158a365b356a |
 
 ## Active Timers
-- Heartbeat cron: ccf64bbc-f322-4ca8-b0be-0ee59db22a99/task-176
+- Heartbeat cron: ccf64bbc-f322-4ca8-b0be-0ee59db22a99/task-536
 - Safety timer: none
 
 ## Artifact Index

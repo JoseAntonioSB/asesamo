@@ -138,7 +138,7 @@ func TestLoginUseCase(t *testing.T) {
 		mockRepo.AssertExpectations(t)
 	})
 
-	t.Run("inactive user returns ErrUserInactive", func(t *testing.T) {
+	t.Run("inactive user with correct password returns ErrUserInactive", func(t *testing.T) {
 		mockRepo := new(MockUserRepository)
 		inactiveUser := *baseUser
 		inactiveUser.IsActive = false
@@ -152,6 +152,41 @@ func TestLoginUseCase(t *testing.T) {
 
 		assert.ErrorIs(t, err, domainErrors.ErrUserInactive)
 		assert.Nil(t, output)
+		mockRepo.AssertExpectations(t)
+	})
+
+	t.Run("inactive user with wrong password returns ErrInvalidCredentials", func(t *testing.T) {
+		mockRepo := new(MockUserRepository)
+		inactiveUser := *baseUser
+		inactiveUser.IsActive = false
+		mockRepo.On("GetByEmail", mock.Anything, "inactive@asesamo.com").Return(&inactiveUser, nil)
+
+		uc := auth.NewLoginUseCase(mockRepo, validSecret)
+		output, err := uc.Execute(context.Background(), auth.LoginInput{
+			Email:    "inactive@asesamo.com",
+			Password: "WrongPassword!",
+		})
+
+		assert.ErrorIs(t, err, domainErrors.ErrInvalidCredentials)
+		assert.Nil(t, output)
+		mockRepo.AssertExpectations(t)
+	})
+
+	t.Run("non-existent user timing branch executes dummy bcrypt and returns ErrInvalidCredentials", func(t *testing.T) {
+		mockRepo := new(MockUserRepository)
+		mockRepo.On("GetByEmail", mock.Anything, "nonexistent@asesamo.com").Return(nil, domainErrors.ErrUserNotFound)
+
+		uc := auth.NewLoginUseCase(mockRepo, validSecret)
+		start := time.Now()
+		output, err := uc.Execute(context.Background(), auth.LoginInput{
+			Email:    "nonexistent@asesamo.com",
+			Password: password,
+		})
+		elapsed := time.Since(start)
+
+		assert.ErrorIs(t, err, domainErrors.ErrInvalidCredentials)
+		assert.Nil(t, output)
+		assert.True(t, elapsed > 5*time.Millisecond, "Dummy bcrypt comparison must take non-trivial time to mitigate timing attacks")
 		mockRepo.AssertExpectations(t)
 	})
 

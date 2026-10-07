@@ -35,9 +35,21 @@ func WriteJSON(w http.ResponseWriter, status int, payload interface{}) {
 	}
 }
 
+// PaginationMeta represents pagination metadata for list responses.
+type PaginationMeta struct {
+	Page    int `json:"page"`
+	PerPage int `json:"per_page"`
+	Total   int `json:"total"`
+}
+
 // WriteSuccess wraps data in the standard success envelope and writes HTTP 200 OK.
 func WriteSuccess(w http.ResponseWriter, status int, data interface{}) {
 	WriteJSON(w, status, SuccessResponse{Data: data})
+}
+
+// WriteSuccessWithMeta wraps data and pagination meta in the standard success envelope.
+func WriteSuccessWithMeta(w http.ResponseWriter, status int, data interface{}, meta interface{}) {
+	WriteJSON(w, status, SuccessResponse{Data: data, Meta: meta})
 }
 
 // WriteError inspects err and writes the standard error envelope with the appropriate HTTP status code.

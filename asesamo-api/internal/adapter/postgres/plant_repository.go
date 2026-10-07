@@ -10,6 +10,7 @@ import (
 	"asesamo-api/internal/core/domain/entity"
 	domainErrors "asesamo-api/internal/core/domain/errors"
 	"asesamo-api/internal/core/domain/repository"
+	"asesamo-api/pkg/tenant"
 
 	"github.com/google/uuid"
 )
@@ -24,10 +25,15 @@ func NewPlantRepository(db *sql.DB) repository.PlantRepository {
 }
 
 func (r *plantRepository) GetByID(ctx context.Context, id uuid.UUID) (*entity.Plant, error) {
+	tenantID, err := tenant.FromContext(ctx)
+	if err != nil {
+		return nil, domainErrors.ErrTenantNotFound
+	}
+
 	query := `
 		SELECT id, tenant_id, name, address, city, state, block_on_expired_docs, created_at, updated_at, deleted_at
 		FROM plants
-		WHERE id = $1 AND deleted_at IS NULL
+		WHERE tenant_id = $1 AND id = $2 AND deleted_at IS NULL
 	`
 
 	var (
@@ -38,7 +44,7 @@ func (r *plantRepository) GetByID(ctx context.Context, id uuid.UUID) (*entity.Pl
 		deletedAt *time.Time
 	)
 
-	err := r.db.QueryRowContext(ctx, query, id).Scan(
+	err = r.db.QueryRowContext(ctx, query, tenantID, id).Scan(
 		&p.ID,
 		&p.TenantID,
 		&p.Name,

@@ -3,14 +3,15 @@ package postgres
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"asesamo-api/internal/core/domain/entity"
 	domainErrors "asesamo-api/internal/core/domain/errors"
 	"asesamo-api/internal/core/domain/repository"
+	"asesamo-api/pkg/tenant"
 
 	"github.com/google/uuid"
 )
@@ -45,12 +46,7 @@ func (r *accessLogRepository) Create(ctx context.Context, log *entity.AccessLog)
 		log.CreatedAt = log.CheckedInAt
 	}
 
-	snapshotBytes, err := json.Marshal(log.DocumentSnapshot)
-	if err != nil {
-		return fmt.Errorf("postgres/access_log: failed to marshal document snapshot: %w", err)
-	}
-
-	_, err = r.db.ExecContext(
+	_, err := r.db.ExecContext(
 		ctx,
 		query,
 		log.ID,
@@ -64,7 +60,7 @@ func (r *accessLogRepository) Create(ctx context.Context, log *entity.AccessLog)
 		log.CheckedOutAt,
 		string(log.Result),
 		log.DenialReason,
-		string(snapshotBytes),
+		log.DocumentSnapshot,
 		log.Notes,
 		log.CreatedAt,
 	)
@@ -77,14 +73,13 @@ func (r *accessLogRepository) Create(ctx context.Context, log *entity.AccessLog)
 
 func (r *accessLogRepository) scanRow(row interface{ Scan(dest ...any) error }) (*entity.AccessLog, error) {
 	var (
-		log           entity.AccessLog
-		contractorID  *uuid.UUID
-		processedBy   *uuid.UUID
-		checkedOutAt  *time.Time
-		denialReason  *string
-		notes         *string
-		snapshotRaw   []byte
-		resultStr     string
+		log          entity.AccessLog
+		contractorID *uuid.UUID
+		processedBy  *uuid.UUID
+		checkedOutAt *time.Time
+		denialReason *string
+		notes        *string
+		resultStr    string
 	)
 
 	err := row.Scan(
@@ -99,7 +94,7 @@ func (r *accessLogRepository) scanRow(row interface{ Scan(dest ...any) error }) 
 		&checkedOutAt,
 		&resultStr,
 		&denialReason,
-		&snapshotRaw,
+		&log.DocumentSnapshot,
 		&notes,
 		&log.CreatedAt,
 	)
@@ -117,14 +112,7 @@ func (r *accessLogRepository) scanRow(row interface{ Scan(dest ...any) error }) 
 	log.DenialReason = denialReason
 	log.Notes = notes
 
-	if len(snapshotRaw) > 0 {
-		var snapshot entity.DocumentSnapshot
-		if err := json.Unmarshal(snapshotRaw, &snapshot); err == nil {
-			log.DocumentSnapshot = snapshot
-		} else {
-			log.DocumentSnapshot = entity.DocumentSnapshot{}
-		}
-	} else {
+	if log.DocumentSnapshot == nil {
 		log.DocumentSnapshot = entity.DocumentSnapshot{}
 	}
 
@@ -132,14 +120,18 @@ func (r *accessLogRepository) scanRow(row interface{ Scan(dest ...any) error }) 
 }
 
 func (r *accessLogRepository) GetByID(ctx context.Context, id uuid.UUID) (*entity.AccessLog, error) {
+	tenantID, err := tenant.FromContext(ctx)
+	if err != nil {
+		return nil, domainErrors.ErrTenantNotFound
+	}
 	query := `
 		SELECT id, tenant_id, plant_id, access_point_id, user_id, contractor_id,
 		       processed_by, checked_in_at, checked_out_at, result, denial_reason,
 		       document_snapshot, notes, created_at
 		FROM access_logs
-		WHERE id = $1
+		WHERE tenant_id = $1 AND id = $2
 	`
-	return r.scanRow(r.db.QueryRowContext(ctx, query, id))
+	return r.scanRow(r.db.QueryRowContext(ctx, query, tenantID, id))
 }
 
 func (r *accessLogRepository) ListByTenant(ctx context.Context, tenantID uuid.UUID, limit, offset int) ([]entity.AccessLog, error) {
@@ -224,6 +216,114 @@ func (r *accessLogRepository) ListByPlant(ctx context.Context, tenantID, plantID
 	return logs, total, nil
 }
 
+// ListWithFilters retrieves paginated access logs matching multi-criteria filters with multi-tenancy.
+func (r *accessLogRepository) ListWithFilters(ctx context.Context, filter repository.AccessLogFilter) ([]entity.AccessLog, int, error) {
+	tenantID, err := tenant.FromContext(ctx)
+	if err != nil {
+		if filter.TenantID != uuid.Nil {
+			tenantID = filter.TenantID
+		} else {
+			return nil, 0, domainErrors.ErrTenantNotFound
+		}
+	}
+	if tenantID == uuid.Nil {
+		return nil, 0, domainErrors.ErrTenantNotFound
+	}
+
+	whereClauses := []string{"tenant_id = $1"}
+	args := []interface{}{tenantID}
+	argIdx := 2
+
+	if filter.PlantID != uuid.Nil {
+		whereClauses = append(whereClauses, fmt.Sprintf("plant_id = $%d", argIdx))
+		args = append(args, filter.PlantID)
+		argIdx++
+	}
+
+	if filter.AccessPointID != uuid.Nil {
+		whereClauses = append(whereClauses, fmt.Sprintf("access_point_id = $%d", argIdx))
+		args = append(args, filter.AccessPointID)
+		argIdx++
+	}
+
+	if filter.WorkerUserID != uuid.Nil {
+		whereClauses = append(whereClauses, fmt.Sprintf("user_id = $%d", argIdx))
+		args = append(args, filter.WorkerUserID)
+		argIdx++
+	}
+
+	if filter.Result != nil && *filter.Result != "" {
+		whereClauses = append(whereClauses, fmt.Sprintf("result = $%d", argIdx))
+		args = append(args, string(*filter.Result))
+		argIdx++
+	}
+
+	if filter.From != nil {
+		whereClauses = append(whereClauses, fmt.Sprintf("checked_in_at >= $%d", argIdx))
+		args = append(args, *filter.From)
+		argIdx++
+	}
+
+	if filter.To != nil {
+		whereClauses = append(whereClauses, fmt.Sprintf("checked_in_at <= $%d", argIdx))
+		args = append(args, *filter.To)
+		argIdx++
+	}
+
+	whereSQL := "WHERE " + strings.Join(whereClauses, " AND ")
+
+	countQuery := "SELECT COUNT(*) FROM access_logs " + whereSQL
+	var total int
+	if err := r.db.QueryRowContext(ctx, countQuery, args...).Scan(&total); err != nil {
+		return nil, 0, fmt.Errorf("postgres/access_log: ListWithFilters count query failed: %w", err)
+	}
+
+	limit := filter.Limit
+	if limit <= 0 {
+		limit = 20
+	}
+	if limit > 100 {
+		limit = 100
+	}
+
+	offset := filter.Offset
+	if offset < 0 {
+		offset = 0
+	}
+
+	dataQuery := fmt.Sprintf(`
+		SELECT id, tenant_id, plant_id, access_point_id, user_id, contractor_id,
+		       processed_by, checked_in_at, checked_out_at, result, denial_reason,
+		       document_snapshot, notes, created_at
+		FROM access_logs
+		%s
+		ORDER BY checked_in_at DESC
+		LIMIT $%d OFFSET $%d
+	`, whereSQL, argIdx, argIdx+1)
+
+	dataArgs := append(args, limit, offset)
+
+	rows, err := r.db.QueryContext(ctx, dataQuery, dataArgs...)
+	if err != nil {
+		return nil, 0, fmt.Errorf("postgres/access_log: ListWithFilters data query failed: %w", err)
+	}
+	defer rows.Close()
+
+	var logs []entity.AccessLog
+	for rows.Next() {
+		l, err := r.scanRow(rows)
+		if err != nil {
+			return nil, 0, err
+		}
+		logs = append(logs, *l)
+	}
+	if logs == nil {
+		logs = []entity.AccessLog{}
+	}
+
+	return logs, total, nil
+}
+
 func (r *accessLogRepository) CheckOutLatest(ctx context.Context, tenantID, plantID, workerID uuid.UUID, checkedOutAt time.Time) (*entity.AccessLog, error) {
 	query := `
 		UPDATE access_logs
@@ -231,7 +331,7 @@ func (r *accessLogRepository) CheckOutLatest(ctx context.Context, tenantID, plan
 		WHERE id = (
 			SELECT id
 			FROM access_logs
-			WHERE tenant_id = $2 AND plant_id = $3 AND user_id = $4 AND checked_out_at IS NULL
+			WHERE tenant_id = $2 AND ($3 = '00000000-0000-0000-0000-000000000000'::uuid OR plant_id = $3) AND user_id = $4 AND checked_out_at IS NULL
 			ORDER BY checked_in_at DESC
 			LIMIT 1
 		)
@@ -251,7 +351,7 @@ func (r *accessLogRepository) CheckOutLatest(ctx context.Context, tenantID, plan
 				WHERE id = (
 					SELECT id
 					FROM access_logs
-					WHERE tenant_id = $2 AND plant_id = $3 AND user_id = $4
+					WHERE tenant_id = $2 AND ($3 = '00000000-0000-0000-0000-000000000000'::uuid OR plant_id = $3) AND user_id = $4
 					ORDER BY checked_in_at DESC
 					LIMIT 1
 				)

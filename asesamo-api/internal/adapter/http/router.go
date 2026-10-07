@@ -2,12 +2,16 @@ package http
 
 import (
 	"net/http"
+	"time"
 
+	"asesamo-api/internal/adapter/http/dto"
 	"asesamo-api/internal/adapter/http/handler"
 	customMiddleware "asesamo-api/internal/adapter/http/middleware"
+	domainErrors "asesamo-api/internal/core/domain/errors"
 
 	"github.com/go-chi/chi/v5"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/httprate"
 )
 
 // RouterConfig contains dependencies for configuring the Chi router.
@@ -37,8 +41,18 @@ func NewRouter(cfg RouterConfig) http.Handler {
 
 	// API v1 group
 	r.Route("/api/v1", func(r chi.Router) {
+		// Rate limiter on login: 10 requests per minute per IP
+		loginLimiter := httprate.LimitBy(
+			10,
+			1*time.Minute,
+			httprate.KeyByIP,
+			httprate.WithLimitHandler(func(w http.ResponseWriter, r *http.Request) {
+				dto.WriteError(w, domainErrors.ErrTooManyRequests)
+			}),
+		)
+
 		// Public Auth
-		r.Post("/auth/login", cfg.AuthHandler.Login)
+		r.With(loginLimiter).Post("/auth/login", cfg.AuthHandler.Login)
 
 		// Protected routes (JWT authenticated)
 		r.Group(func(r chi.Router) {
@@ -48,9 +62,11 @@ func NewRouter(cfg RouterConfig) http.Handler {
 			r.Get("/access-points", cfg.AccessPointHandler.List)
 
 			// Gate Access Verification, Check-Out, and Audit Logs
-			r.Post("/access/check-in", cfg.AccessHandler.CheckIn)
-			r.Post("/access/check-out", cfg.AccessHandler.CheckOut)
-			r.Get("/access-logs", cfg.AccessHandler.ListLogs)
+			if cfg.AccessHandler != nil {
+				r.Post("/access/check-in", cfg.AccessHandler.CheckIn)
+				r.Post("/access/check-out", cfg.AccessHandler.CheckOut)
+				r.Get("/access-logs", cfg.AccessHandler.ListLogs)
+			}
 		})
 	})
 

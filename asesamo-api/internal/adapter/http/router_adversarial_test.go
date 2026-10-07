@@ -128,16 +128,29 @@ func TestAdversarial_RouterAndBruteForce(t *testing.T) {
 
 		t.Logf("Brute force results over %d burst requests: %+v", attempts, statusCodeCounts)
 
-		// Check whether any request was rate-limited (HTTP 429 Too Many Requests)
+		// Check rate limiting enforcement (HTTP 429 Too Many Requests)
 		rateLimitedCount := statusCodeCounts[http.StatusTooManyRequests]
 		unauthorizedCount := statusCodeCounts[http.StatusUnauthorized]
 
 		t.Logf("Rate-limited requests (HTTP 429): %d", rateLimitedCount)
 		t.Logf("Processed unauthorized attempts (HTTP 401): %d", unauthorizedCount)
 
-		// Document empirical vulnerability: 0 requests were rate limited!
-		assert.Equal(t, attempts, unauthorizedCount, "All attempts were processed without rate limiting")
-		assert.Equal(t, 0, rateLimitedCount, "No rate limiting was applied to rapid login attempts")
+		assert.Equal(t, 10, unauthorizedCount, "First 10 attempts should be processed by auth handler")
+		assert.Equal(t, 40, rateLimitedCount, "Subsequent 40 attempts must be rate-limited with HTTP 429")
+
+		// Verify 429 response structure conforms to standard error envelope
+		req429 := httptest.NewRequest(http.MethodPost, "/api/v1/auth/login", bytes.NewReader([]byte(`{"email":"victim@asesamo.com","password":"pwd"}`)))
+		req429.Header.Set("Content-Type", "application/json")
+		req429.RemoteAddr = "203.0.113.195:12345"
+		rec429 := httptest.NewRecorder()
+		router.ServeHTTP(rec429, req429)
+
+		assert.Equal(t, http.StatusTooManyRequests, rec429.Code)
+		var errResp dto.ErrorResponse
+		err := json.Unmarshal(rec429.Body.Bytes(), &errResp)
+		require.NoError(t, err)
+		assert.Equal(t, "TOO_MANY_REQUESTS", errResp.Error.Code)
+		assert.Equal(t, "Demasiadas solicitudes. Intente más tarde.", errResp.Error.Message)
 	})
 
 	t.Run("FAIL-CLOSED TEST: Missing or nil tenant in JWT prevents cross-tenant access", func(t *testing.T) {

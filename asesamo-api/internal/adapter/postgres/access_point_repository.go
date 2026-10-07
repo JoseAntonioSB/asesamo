@@ -10,6 +10,7 @@ import (
 	"asesamo-api/internal/core/domain/entity"
 	domainErrors "asesamo-api/internal/core/domain/errors"
 	"asesamo-api/internal/core/domain/repository"
+	"asesamo-api/pkg/tenant"
 
 	"github.com/google/uuid"
 )
@@ -59,8 +60,12 @@ func (r *accessPointRepository) scanAccessPoint(row interface{ Scan(dest ...any)
 }
 
 func (r *accessPointRepository) GetByID(ctx context.Context, id uuid.UUID) (*entity.AccessPoint, error) {
-	query := accessPointBaseQuery + ` WHERE id = $1 AND deleted_at IS NULL`
-	row := r.db.QueryRowContext(ctx, query, id)
+	tenantID, err := tenant.FromContext(ctx)
+	if err != nil {
+		return nil, domainErrors.ErrTenantNotFound
+	}
+	query := accessPointBaseQuery + ` WHERE tenant_id = $1 AND id = $2 AND deleted_at IS NULL`
+	row := r.db.QueryRowContext(ctx, query, tenantID, id)
 	return r.scanAccessPoint(row)
 }
 
@@ -89,8 +94,12 @@ func (r *accessPointRepository) ListByTenant(ctx context.Context, tenantID uuid.
 }
 
 func (r *accessPointRepository) ListByPlant(ctx context.Context, plantID uuid.UUID) ([]entity.AccessPoint, error) {
-	query := accessPointBaseQuery + ` WHERE plant_id = $1 AND is_active = true AND deleted_at IS NULL ORDER BY name ASC`
-	rows, err := r.db.QueryContext(ctx, query, plantID)
+	tenantID, err := tenant.FromContext(ctx)
+	if err != nil {
+		return nil, domainErrors.ErrTenantNotFound
+	}
+	query := accessPointBaseQuery + ` WHERE tenant_id = $1 AND plant_id = $2 AND is_active = true AND deleted_at IS NULL ORDER BY name ASC`
+	rows, err := r.db.QueryContext(ctx, query, tenantID, plantID)
 	if err != nil {
 		return nil, fmt.Errorf("postgres/access_point: query failed: %w", err)
 	}

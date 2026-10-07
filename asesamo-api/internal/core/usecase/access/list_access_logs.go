@@ -2,6 +2,7 @@ package access
 
 import (
 	"context"
+	"time"
 
 	"asesamo-api/internal/core/domain/entity"
 	"asesamo-api/internal/core/domain/repository"
@@ -9,12 +10,17 @@ import (
 	"github.com/google/uuid"
 )
 
-// ListAccessLogsInput contains parameters for listing logs.
+// ListAccessLogsInput contains parameters for listing logs with multi-column filtering.
 type ListAccessLogsInput struct {
-	TenantID uuid.UUID `json:"tenant_id"`
-	PlantID  uuid.UUID `json:"plant_id"`
-	Page     int       `json:"page"`
-	PerPage  int       `json:"per_page"`
+	TenantID      uuid.UUID            `json:"tenant_id"`
+	PlantID       uuid.UUID            `json:"plant_id"`
+	AccessPointID uuid.UUID            `json:"access_point_id"`
+	WorkerUserID  uuid.UUID            `json:"worker_user_id"`
+	Result        *entity.AccessResult `json:"result,omitempty"`
+	From          *time.Time           `json:"from,omitempty"`
+	To            *time.Time           `json:"to,omitempty"`
+	Page          int                  `json:"page"`
+	PerPage       int                  `json:"per_page"`
 }
 
 // ListAccessLogsOutput contains paginated logs.
@@ -35,7 +41,7 @@ func NewListAccessLogsUseCase(logRepo repository.AccessLogRepository) *ListAcces
 	return &ListAccessLogsUseCase{accessLogRepo: logRepo}
 }
 
-// Execute retrieves paginated access logs for a plant.
+// Execute retrieves paginated access logs matching multi-criteria filters.
 func (uc *ListAccessLogsUseCase) Execute(ctx context.Context, in ListAccessLogsInput) (*ListAccessLogsOutput, error) {
 	if in.Page <= 0 {
 		in.Page = 1
@@ -49,18 +55,19 @@ func (uc *ListAccessLogsUseCase) Execute(ctx context.Context, in ListAccessLogsI
 
 	offset := (in.Page - 1) * in.PerPage
 
-	var (
-		logs  []entity.AccessLog
-		total int
-		err   error
-	)
-
-	if in.PlantID != uuid.Nil {
-		logs, total, err = uc.accessLogRepo.ListByPlant(ctx, in.TenantID, in.PlantID, in.PerPage, offset)
-	} else {
-		logs, err = uc.accessLogRepo.ListByTenant(ctx, in.TenantID, in.PerPage, offset)
-		total = len(logs)
+	filter := repository.AccessLogFilter{
+		TenantID:      in.TenantID,
+		PlantID:       in.PlantID,
+		AccessPointID: in.AccessPointID,
+		WorkerUserID:  in.WorkerUserID,
+		Result:        in.Result,
+		From:          in.From,
+		To:            in.To,
+		Limit:         in.PerPage,
+		Offset:        offset,
 	}
+
+	logs, total, err := uc.accessLogRepo.ListWithFilters(ctx, filter)
 	if err != nil {
 		return nil, err
 	}

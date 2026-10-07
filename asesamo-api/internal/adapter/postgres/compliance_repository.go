@@ -39,7 +39,7 @@ func (r *complianceRepository) GetWorkerAffiliation(ctx context.Context, plantID
 		&aff.WorkerID,
 		&aff.FullName,
 		&avatarR2Key,
-		&aff.IsActive,
+		&aff.UserIsActive,
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -48,6 +48,7 @@ func (r *complianceRepository) GetWorkerAffiliation(ctx context.Context, plantID
 		return nil, fmt.Errorf("postgres/compliance: check user query failed: %w", err)
 	}
 	aff.AvatarR2Key = avatarR2Key
+	aff.IsActive = aff.UserIsActive
 
 	// Next, retrieve contractor affiliation and plant status
 	affiliationQuery := `
@@ -56,9 +57,11 @@ func (r *complianceRepository) GetWorkerAffiliation(ctx context.Context, plantID
 			c.name AS contractor_name,
 			c.rfc AS contractor_rfc,
 			c.repse_number AS repse_number,
+			c.is_active AS contractor_is_active,
 			cw.curp,
 			cw.imss_number,
 			cw.job_title,
+			cw.is_active AS worker_is_active,
 			COALESCE(pc.status::text, 'pending') AS plant_status
 		FROM contractor_workers cw
 		JOIN contractors c ON cw.contractor_id = c.id
@@ -81,15 +84,19 @@ func (r *complianceRepository) GetWorkerAffiliation(ctx context.Context, plantID
 		&aff.ContractorName,
 		&rfc,
 		&repseNumber,
+		&aff.ContractorIsActive,
 		&curp,
 		&imssNumber,
 		&jobTitle,
+		&aff.WorkerIsActive,
 		&plantStatus,
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			// Worker exists but is not affiliated with a contractor in this plant
 			aff.PlantStatus = "pending"
+			aff.WorkerIsActive = false
+			aff.ContractorIsActive = false
 			return &aff, nil
 		}
 		return nil, fmt.Errorf("postgres/compliance: affiliation query failed: %w", err)
@@ -110,11 +117,11 @@ func (r *complianceRepository) GetPlantDocumentRequirements(ctx context.Context,
 		SELECT dt.id, dt.code, dt.name, dt.applies_to, pdr.is_required, COALESCE(pdr.validity_days, dt.default_validity_days)
 		FROM plant_document_requirements pdr
 		JOIN document_types dt ON pdr.document_type_id = dt.id
-		WHERE pdr.plant_id = $1 AND pdr.tenant_id = $2 AND dt.is_active = TRUE
+		WHERE pdr.tenant_id = $1 AND pdr.plant_id = $2 AND dt.is_active = TRUE
 		ORDER BY dt.code ASC
 	`
 
-	rows, err := r.db.QueryContext(ctx, plantReqQuery, plantID, tenantID)
+	rows, err := r.db.QueryContext(ctx, plantReqQuery, tenantID, plantID)
 	if err != nil {
 		return nil, fmt.Errorf("postgres/compliance: query plant doc requirements failed: %w", err)
 	}

@@ -49,21 +49,29 @@ func main() {
 	// Repositories (outbound adapters)
 	userRepo := postgres.NewUserRepository(db.DB)
 	accessPointRepo := postgres.NewAccessPointRepository(db.DB)
+	plantRepo := postgres.NewPlantRepository(db.DB)
+	accessLogRepo := postgres.NewAccessLogRepository(db.DB)
+	complianceRepo := postgres.NewComplianceRepository(db.DB)
 
 	// Use cases (core business logic)
 	loginUseCase := auth.NewLoginUseCase(userRepo, cfg.JWTSecret)
 	listAccessPointsUseCase := access.NewListAccessPointsUseCase(accessPointRepo)
+	checkInUseCase := access.NewCheckInUseCase(accessPointRepo, plantRepo, complianceRepo, accessLogRepo)
+	checkOutUseCase := access.NewCheckOutUseCase(accessLogRepo, accessPointRepo)
+	listAccessLogsUseCase := access.NewListAccessLogsUseCase(accessLogRepo)
 
 	// Handlers (inbound adapters)
 	healthHandler := handler.NewHealthHandler(db, "1.0.0")
 	authHandler := handler.NewAuthHandler(loginUseCase)
 	accessPointHandler := handler.NewAccessPointHandler(listAccessPointsUseCase)
+	accessHandler := handler.NewAccessHandler(checkInUseCase, checkOutUseCase, listAccessLogsUseCase)
 
 	// 4. Assemble HTTP Router
 	router := adapterHTTP.NewRouter(adapterHTTP.RouterConfig{
 		HealthHandler:      healthHandler,
 		AuthHandler:        authHandler,
 		AccessPointHandler: accessPointHandler,
+		AccessHandler:      accessHandler,
 		JWTSecret:          cfg.JWTSecret,
 		CORSOrigins:        cfg.CORSAllowedOrigins,
 	})

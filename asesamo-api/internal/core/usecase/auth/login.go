@@ -15,6 +15,10 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// dummyBcryptHash is a precomputed valid cost-10 bcrypt hash used for constant-time
+// password verification when a requested user is not found, mitigating CWE-208 timing attacks.
+const dummyBcryptHash = "$2a$10$xkateHF30gEES5pFuIga4egG9Mb9C7/ziFxqTnUSc03OlhgZKH9f."
+
 // LoginInput defines the credentials for authenticating a user.
 type LoginInput struct {
 	Email    string
@@ -51,24 +55,28 @@ func (uc *LoginUseCase) Execute(ctx context.Context, input LoginInput) (*LoginOu
 	user, err := uc.userRepo.GetByEmail(ctx, email)
 	if err != nil {
 		if domainErrors.IsNotFound(err) {
-			// Prevent user enumeration attack (OWASP A07): return same error as wrong password
+			// Mitigate timing side-channel (CWE-208 / OWASP A07):
+			// Execute dummy bcrypt comparison with cost 10 to ensure response
+			// latency is indistinguishable from existing user password verification.
+			_ = bcrypt.CompareHashAndPassword([]byte(dummyBcryptHash), []byte(input.Password))
 			return nil, domainErrors.ErrInvalidCredentials
 		}
 		return nil, domainErrors.ErrDatabase.WithErr(err)
 	}
 
 	if user == nil {
+		_ = bcrypt.CompareHashAndPassword([]byte(dummyBcryptHash), []byte(input.Password))
 		return nil, domainErrors.ErrInvalidCredentials
 	}
 
-	// Verify account status
-	if !user.IsActive {
-		return nil, domainErrors.ErrUserInactive
-	}
-
-	// Verify password hash
+	// Verify password hash FIRST to prevent inactive account status enumeration (OWASP A07)
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(input.Password)); err != nil {
 		return nil, domainErrors.ErrInvalidCredentials
+	}
+
+	// Verify account status only AFTER verifying password credentials
+	if !user.IsActive {
+		return nil, domainErrors.ErrUserInactive
 	}
 
 	// Determine tenant UUID

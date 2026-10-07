@@ -9,6 +9,7 @@ import (
 	"asesamo-api/internal/core/domain/entity"
 	domainErrors "asesamo-api/internal/core/domain/errors"
 	"asesamo-api/internal/core/domain/repository"
+	"asesamo-api/pkg/tenant"
 
 	"github.com/google/uuid"
 )
@@ -33,6 +34,7 @@ type CheckInOutput struct {
 	Plant            PlantSummary                  `json:"plant"`
 	AccessPoint      AccessPointSummary            `json:"access_point"`
 	DocumentSnapshot []entity.DocumentSnapshotItem `json:"document_snapshot"`
+	Documents        []entity.DocumentSnapshotItem `json:"documents"`
 }
 
 type WorkerSummary struct {
@@ -94,6 +96,11 @@ func (uc *CheckInUseCase) Execute(ctx context.Context, in CheckInInput) (*CheckI
 		return nil, domainErrors.ErrInvalidInput.WithMessage("El punto de acceso es obligatorio.")
 	}
 
+	// Propagate tenant into context if not already present (fail-safe for direct invocations)
+	if _, err := tenant.FromContext(ctx); err != nil && in.TenantID != uuid.Nil {
+		ctx = tenant.WithTenant(ctx, in.TenantID)
+	}
+
 	// 1. Verify Access Point
 	ap, err := uc.accessPointRepo.GetByID(ctx, in.AccessPointID)
 	if err != nil {
@@ -153,23 +160,37 @@ func (uc *CheckInUseCase) Execute(ctx context.Context, in CheckInInput) (*CheckI
 	warningThreshold := now.AddDate(0, 0, 30)
 
 	var (
-		snapshot        entity.DocumentSnapshot
-		failures        []string
-		warnings        []string
-		hasFatalFailure bool
-		hasWarning      bool
+		snapshot              entity.DocumentSnapshot
+		nonNegotiableFailures []string
+		expiredDocFailures    []string
+		warnings              []string
 	)
 
-	// Check worker active state
+	// Check worker active state (both users.is_active AND contractor_workers.is_active)
+	isWorkerActive := aff.IsActive
+	if aff.UserIsActive || aff.WorkerIsActive {
+		isWorkerActive = aff.UserIsActive && aff.WorkerIsActive
+	}
 	if !aff.IsActive {
-		hasFatalFailure = true
-		failures = append(failures, "El perfil del trabajador se encuentra inactivo.")
+		isWorkerActive = false
+	}
+	if !isWorkerActive {
+		nonNegotiableFailures = append(nonNegotiableFailures, "El perfil del trabajador se encuentra inactivo.")
 	}
 
-	// Check contractor status in this plant
-	if aff.PlantStatus == "blocked" || aff.PlantStatus == "suspended" {
-		hasFatalFailure = true
-		failures = append(failures, fmt.Sprintf("La empresa contratista '%s' se encuentra %s en esta planta.", aff.ContractorName, aff.PlantStatus))
+	// Check contractor active state (both contractors.is_active AND plant_contractors.status == 'active')
+	// Statuses 'pending', 'suspended', or 'blocked' must all trigger denied.
+	if aff.ContractorID != uuid.Nil {
+		if !aff.ContractorIsActive && (aff.UserIsActive || aff.WorkerIsActive) {
+			nonNegotiableFailures = append(nonNegotiableFailures, fmt.Sprintf("La empresa contratista '%s' se encuentra inactiva.", aff.ContractorName))
+		}
+		if aff.PlantStatus != "active" {
+			if aff.PlantStatus == "blocked" || aff.PlantStatus == "suspended" {
+				nonNegotiableFailures = append(nonNegotiableFailures, fmt.Sprintf("La empresa contratista '%s' se encuentra %s en esta planta.", aff.ContractorName, aff.PlantStatus))
+			} else {
+				nonNegotiableFailures = append(nonNegotiableFailures, fmt.Sprintf("La empresa contratista '%s' no se encuentra activa en esta planta (estatus: %s).", aff.ContractorName, aff.PlantStatus))
+			}
+		}
 	}
 
 	for _, req := range requirements {
@@ -187,8 +208,7 @@ func (uc *CheckInUseCase) Execute(ctx context.Context, in CheckInInput) (*CheckI
 			reason := fmt.Sprintf("Documento '%s' faltante.", req.DocumentName)
 			item.FailureReason = &reason
 			if req.IsRequired {
-				hasFatalFailure = true
-				failures = append(failures, reason)
+				nonNegotiableFailures = append(nonNegotiableFailures, reason)
 			}
 		} else {
 			item.Status = string(doc.Status)
@@ -202,21 +222,18 @@ func (uc *CheckInUseCase) Execute(ctx context.Context, in CheckInInput) (*CheckI
 				reason := fmt.Sprintf("Documento '%s' no aprobado (estatus: %s).", req.DocumentName, doc.Status)
 				item.FailureReason = &reason
 				if req.IsRequired {
-					hasFatalFailure = true
-					failures = append(failures, reason)
+					nonNegotiableFailures = append(nonNegotiableFailures, reason)
 				}
 			} else if doc.ExpiresAt != nil && doc.ExpiresAt.Before(now) {
 				item.IsValid = false
 				reason := fmt.Sprintf("Documento '%s' vencido el %s.", req.DocumentName, doc.ExpiresAt.Format("2006-01-02"))
 				item.FailureReason = &reason
 				if req.IsRequired {
-					hasFatalFailure = true
-					failures = append(failures, reason)
+					expiredDocFailures = append(expiredDocFailures, reason)
 				}
 			} else {
 				item.IsValid = true
 				if doc.ExpiresAt != nil && doc.ExpiresAt.Before(warningThreshold) {
-					hasWarning = true
 					warnings = append(warnings, fmt.Sprintf("Documento '%s' próximo a vencer el %s.", req.DocumentName, doc.ExpiresAt.Format("2006-01-02")))
 				}
 			}
@@ -231,20 +248,27 @@ func (uc *CheckInUseCase) Execute(ctx context.Context, in CheckInInput) (*CheckI
 		denialReason   *string
 	)
 
-	if hasFatalFailure {
+	if len(nonNegotiableFailures) > 0 {
+		// Non-negotiable failures always deny access regardless of plant policy
+		decisionResult = entity.AccessResultDenied
+		allFailures := append(nonNegotiableFailures, expiredDocFailures...)
+		combined := strings.Join(allFailures, " | ")
+		denialReason = &combined
+	} else if len(expiredDocFailures) > 0 {
 		if plant.BlockOnExpiredDocs {
 			decisionResult = entity.AccessResultDenied
-			combined := strings.Join(failures, " | ")
+			combined := strings.Join(expiredDocFailures, " | ")
 			denialReason = &combined
 		} else {
 			decisionResult = entity.AccessResultGrantedWithWarning
-			combined := strings.Join(failures, " | ")
-			denialReason = &combined
+			denialReason = nil
 		}
-	} else if hasWarning {
+	} else if len(warnings) > 0 {
 		decisionResult = entity.AccessResultGrantedWithWarning
+		denialReason = nil
 	} else {
 		decisionResult = entity.AccessResultGranted
+		denialReason = nil
 	}
 
 	// 8. Create Access Log Record
@@ -304,5 +328,6 @@ func (uc *CheckInUseCase) Execute(ctx context.Context, in CheckInInput) (*CheckI
 			Name: ap.Name,
 		},
 		DocumentSnapshot: snapshot,
+		Documents:        snapshot,
 	}, nil
 }

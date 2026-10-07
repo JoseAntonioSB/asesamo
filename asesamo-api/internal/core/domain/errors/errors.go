@@ -59,6 +59,30 @@ func IsNotFound(err error) bool {
 	return false
 }
 
+// IsInvalidInput returns true if the error indicates invalid input.
+func IsInvalidInput(err error) bool {
+	if err == nil {
+		return false
+	}
+	var appErr *AppError
+	if errors.As(err, &appErr) {
+		return appErr.HTTPStatus == http.StatusBadRequest || appErr.Code == "INVALID_INPUT"
+	}
+	return false
+}
+
+// IsTooManyRequests returns true if the error indicates rate limiting.
+func IsTooManyRequests(err error) bool {
+	if err == nil {
+		return false
+	}
+	var appErr *AppError
+	if errors.As(err, &appErr) {
+		return appErr.HTTPStatus == http.StatusTooManyRequests || appErr.Code == "TOO_MANY_REQUESTS"
+	}
+	return false
+}
+
 // WithErr returns a copy of AppError wrapping an underlying cause.
 func (e *AppError) WithErr(err error) *AppError {
 	return &AppError{
@@ -165,5 +189,10 @@ var (
 		Code:       "DATABASE_ERROR",
 		Message:    "Error de comunicación con la base de datos.",
 		HTTPStatus: http.StatusInternalServerError,
+	}
+	ErrTooManyRequests = &AppError{
+		Code:       "TOO_MANY_REQUESTS",
+		Message:    "Demasiadas solicitudes. Intente más tarde.",
+		HTTPStatus: http.StatusTooManyRequests,
 	}
 )

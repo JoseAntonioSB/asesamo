@@ -56,8 +56,8 @@ ASESAMO is an industrial access control and document compliance system. Phase 1 
 |---|------|-------|-------------|--------|
 | E2E | E2E Testing Suite | Requirements-driven opaque-box test runner & Tiers 1-4 test cases -> TEST_READY.md | none | DONE |
 | M1 | Database & Environment Scaffolding | .env.example, .env, docker-compose base, seed script with native bcrypt & deterministic test records | none | DONE |
-| M2 | Backend Core & Authentication | asesamo-api Clean Architecture, config, DB pool, JWT auth, tenant middleware, access-points API, unit tests | M1 | PLANNED |
-| M3 | Access Verification Engine & Logging | Check-in/out logic, compliance evaluation, immutable JSONB access_logs, unit + integration tests | M2 | PLANNED |
+| M2 | Backend Core & Authentication | asesamo-api Clean Architecture, config, DB pool, JWT auth, tenant middleware, access-points API, unit tests | M1 | DONE |
+| M3 | Access Verification Engine & Logging | Check-in/out logic, compliance evaluation, immutable JSONB access_logs, unit + integration tests | M2 | DONE |
 | M4 | Frontend Web Interface (asesamo-web) | Next.js 14, Tailwind, shadcn/ui, Guard login, Caseta check-in, visual status cards, worker & doc tables | M2 | PLANNED |
 | M5 | Local Orchestration & Smoke Verification | Multi-stage Dockerfiles, full docker-compose.yml, scripts/verify_acceptance.sh | M3, M4 | PLANNED |
 | M6 | Final E2E Test Pass & Hardening | Run 100% E2E test suite (Tiers 1-4) + Tier 5 adversarial coverage hardening | M5, E2E | PLANNED |
