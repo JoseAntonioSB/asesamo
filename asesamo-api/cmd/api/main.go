@@ -18,6 +18,7 @@ import (
 	"asesamo-api/internal/adapter/storage"
 	"asesamo-api/internal/core/usecase/access"
 	"asesamo-api/internal/core/usecase/auth"
+	"asesamo-api/internal/core/usecase/contractor"
 	"asesamo-api/internal/core/usecase/document"
 	"asesamo-api/internal/core/usecase/user"
 	"asesamo-api/internal/core/usecase/worker"
@@ -56,6 +57,7 @@ func main() {
 	accessLogRepo := postgres.NewAccessLogRepository(db.DB)
 	complianceRepo := postgres.NewComplianceRepository(db.DB)
 	docRepo := postgres.NewDocumentRepository(db.DB)
+	contractorRepo := postgres.NewContractorRepository(db.DB)
 
 	storageService, err := storage.NewLocalStorageService(cfg.StorageDir)
 	if err != nil {
@@ -78,6 +80,15 @@ func main() {
 	updateThemeUseCase := user.NewUpdateThemeUseCase(userRepo)
 	getCredentialUseCase := worker.NewGetCredentialUseCase(userRepo, plantRepo, complianceRepo)
 
+	// Contractor Use Cases
+	inviteContractorUseCase := contractor.NewInviteContractorUseCase(contractorRepo, userRepo, plantRepo)
+	listContractorsUseCase := contractor.NewListPlantContractorsUseCase(contractorRepo, plantRepo)
+	updateContractorStatusUseCase := contractor.NewUpdateContractorStatusUseCase(contractorRepo)
+	getMyCompanyUseCase := contractor.NewGetMyContractorCompanyUseCase(contractorRepo)
+	listWorkersUseCase := contractor.NewListContractorWorkersUseCase(contractorRepo)
+	addWorkerUseCase := contractor.NewAddContractorWorkerUseCase(contractorRepo, userRepo)
+	toggleWorkerStatusUseCase := contractor.NewToggleContractorWorkerStatusUseCase(contractorRepo)
+
 	// Handlers (inbound adapters)
 	healthHandler := handler.NewHealthHandler(db, "1.0.0")
 	authHandler := handler.NewAuthHandler(loginUseCase)
@@ -87,6 +98,15 @@ func main() {
 	docHandler.SetReviewUseCases(reviewDocUseCase, listPendingDocsUseCase)
 	userHandler := handler.NewUserHandler(updateThemeUseCase)
 	workerHandler := handler.NewWorkerHandler(getCredentialUseCase)
+	contractorHandler := handler.NewContractorHandler(
+		inviteContractorUseCase,
+		listContractorsUseCase,
+		updateContractorStatusUseCase,
+		getMyCompanyUseCase,
+		listWorkersUseCase,
+		addWorkerUseCase,
+		toggleWorkerStatusUseCase,
+	)
 
 	loginLimit := 100
 	if cfg.AppEnv == config.EnvProduction {
@@ -102,6 +122,7 @@ func main() {
 		DocumentHandler:    docHandler,
 		UserHandler:        userHandler,
 		WorkerHandler:      workerHandler,
+		ContractorHandler:  contractorHandler,
 		JWTSecret:          cfg.JWTSecret,
 		CORSOrigins:        cfg.CORSAllowedOrigins,
 		LoginRateLimit:     loginLimit,

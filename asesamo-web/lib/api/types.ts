@@ -259,3 +259,74 @@ export interface WorkerCredentialResponse {
   documents: DocumentSnapshotItem[];
   generated_at: string;
 }
+
+// ==========================================
+// 8. Contractor & Crew Management
+// ==========================================
+
+export type PlantContractorStatus = 'active' | 'pending' | 'suspended' | 'blocked';
+export type ContractorType = 'company' | 'individual';
+
+export interface ContractorItem {
+  id: string; // UUID
+  name: string;
+  rfc?: string | null;
+  repse_number?: string | null;
+  contractor_type: ContractorType | string;
+  admin_user_id?: string | null;
+  admin_full_name?: string | null;
+  admin_email?: string | null;
+  admin_phone?: string | null;
+  plant_status?: PlantContractorStatus | string;
+  workers_count: number;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface ContractorWorkerItem {
+  worker_id: string; // UUID (user_id)
+  contractor_id: string; // UUID
+  full_name: string;
+  email: string;
+  phone?: string | null;
+  job_title?: string | null;
+  curp?: string | null;
+  imss_number?: string | null;
+  is_active: boolean;
+  user_is_active: boolean;
+  documents_count: number;
+  created_at: string;
+}
+
+export interface InviteContractorRequest {
+  plant_id: string;
+  name: string;
+  rfc: string;
+  repse_number?: string;
+  contractor_type: 'company' | 'individual';
+  admin_email: string;
+  admin_full_name?: string;
+  admin_phone?: string;
+  initial_status?: 'active' | 'pending';
+}
+
+export interface UpdateContractorStatusPayload {
+  plant_id: string;
+  status: PlantContractorStatus;
+}
+
+export interface AddContractorWorkerPayload {
+  contractor_id?: string;
+  full_name: string;
+  email: string;
+  phone?: string;
+  job_title?: string;
+  curp?: string;
+  imss_number?: string;
+}
+
+export interface ToggleWorkerStatusPayload {
+  contractor_id?: string;
+  is_active: boolean;
+}
+

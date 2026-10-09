@@ -29,6 +29,7 @@ import {
   AlertTriangle,
   Printer,
   QrCode,
+  Building2,
 } from 'lucide-react';
 
 type FilterTab = 'pending_review' | 'all' | 'approved' | 'rejected';
@@ -250,6 +251,18 @@ function EHSApprovalTrayContent() {
               >
                 <FolderOpen className="w-3.5 h-3.5 text-emerald-400" />
                 <span className="hidden sm:inline">Expediente</span>
+              </Button>
+            </Link>
+
+            <Link href="/contratistas">
+              <Button
+                size="sm"
+                variant="outline"
+                className="border-slate-800 text-blue-300 hover:text-white hover:bg-slate-800 text-xs gap-1.5"
+                title="Padrón de Contratistas y Cuadrillas"
+              >
+                <Building2 className="w-3.5 h-3.5 text-blue-400" />
+                <span className="hidden sm:inline">Contratistas</span>
               </Button>
             </Link>
 

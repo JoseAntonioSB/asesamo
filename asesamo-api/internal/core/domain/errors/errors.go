@@ -150,6 +150,11 @@ var (
 		Message:    "Punto de acceso no encontrado o no pertenece al tenant.",
 		HTTPStatus: http.StatusNotFound,
 	}
+	ErrPlantNotFound = &AppError{
+		Code:       "PLANT_NOT_FOUND",
+		Message:    "Planta no encontrada o no pertenece al tenant.",
+		HTTPStatus: http.StatusNotFound,
+	}
 	ErrWorkerNotFound = &AppError{
 		Code:       "WORKER_NOT_FOUND",
 		Message:    "Trabajador no encontrado en el sistema.",

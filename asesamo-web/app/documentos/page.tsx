@@ -21,6 +21,7 @@ import {
   FileCheck2,
   FileStack,
   QrCode,
+  Building2,
 } from 'lucide-react';
 
 function DocumentosContent() {
@@ -124,6 +125,18 @@ function DocumentosContent() {
                 </Button>
               </Link>
             )}
+
+            <Link href="/contratistas">
+              <Button
+                size="sm"
+                variant="outline"
+                className="border-slate-700 text-blue-300 hover:text-white hover:bg-slate-800 text-xs gap-1.5"
+                title="Padrón de Contratistas y Cuadrillas"
+              >
+                <Building2 className="w-3.5 h-3.5 text-blue-400" />
+                <span className="hidden sm:inline">Contratistas</span>
+              </Button>
+            </Link>
 
             <Link href="/credencial">
               <Button

@@ -23,6 +23,7 @@ type RouterConfig struct {
 	DocumentHandler    *handler.DocumentHandler
 	UserHandler        *handler.UserHandler
 	WorkerHandler      *handler.WorkerHandler
+	ContractorHandler  *handler.ContractorHandler
 	JWTSecret          string
 	CORSOrigins        []string
 	LoginRateLimit     int
@@ -96,6 +97,24 @@ func NewRouter(cfg RouterConfig) http.Handler {
 			if cfg.WorkerHandler != nil {
 				r.Get("/workers/me/credential", cfg.WorkerHandler.GetMyCredential)
 				r.Get("/workers/{id}/credential", cfg.WorkerHandler.GetWorkerCredential)
+			}
+
+			// Contractor & Crew Management (Phase 2 Module 1)
+			if cfg.ContractorHandler != nil {
+				r.Route("/contractors", func(cr chi.Router) {
+					// Contractor Companies
+					cr.With(customMiddleware.RequireRole("plant_admin", "ehs_manager", "tenant_admin")).Post("/invite", cfg.ContractorHandler.InviteContractor)
+					cr.Get("/", cfg.ContractorHandler.ListPlantContractors)
+					cr.With(customMiddleware.RequireRole("plant_admin", "ehs_manager", "tenant_admin")).Patch("/{id}/status", cfg.ContractorHandler.UpdateContractorStatus)
+
+					// Contractor Self Company Info
+					cr.With(customMiddleware.RequireRole("contractor_admin")).Get("/my-company", cfg.ContractorHandler.GetMyCompany)
+
+					// Crew Management
+					cr.Get("/workers", cfg.ContractorHandler.ListWorkers)
+					cr.With(customMiddleware.RequireRole("contractor_admin", "plant_admin", "ehs_manager", "tenant_admin")).Post("/workers", cfg.ContractorHandler.AddWorker)
+					cr.With(customMiddleware.RequireRole("contractor_admin", "plant_admin", "ehs_manager", "tenant_admin")).Patch("/workers/{id}/status", cfg.ContractorHandler.ToggleWorkerStatus)
+				})
 			}
 		})
 	})

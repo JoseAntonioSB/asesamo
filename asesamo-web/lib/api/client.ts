@@ -20,6 +20,12 @@ import {
   UploadDocumentParams,
   ReviewDocumentPayload,
   WorkerCredentialResponse,
+  ContractorItem,
+  ContractorWorkerItem,
+  InviteContractorRequest,
+  UpdateContractorStatusPayload,
+  AddContractorWorkerPayload,
+  ToggleWorkerStatusPayload,
 } from './types';
 import { getStoredToken, setStoredToken, setStoredUser, clearAuthSession } from '../auth';
 
@@ -399,6 +405,102 @@ export class ApiClient {
       `/workers/${encodeURIComponent(workerId)}/credential${qs}`,
       {
         method: 'GET',
+      }
+    );
+    return res.data;
+  }
+
+  /**
+   * POST /api/v1/contractors/invite
+   * Invites and registers a new contractor company and its admin user.
+   */
+  public async inviteContractor(payload: InviteContractorRequest): Promise<ContractorItem> {
+    const res = await this.request<ContractorItem>('/contractors/invite', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    return res.data;
+  }
+
+  /**
+   * GET /api/v1/contractors?plant_id=...
+   * Lists all contractors affiliated with the given plant.
+   */
+  public async listPlantContractors(plantId: string): Promise<ContractorItem[]> {
+    const res = await this.request<ContractorItem[]>(`/contractors?plant_id=${encodeURIComponent(plantId)}`, {
+      method: 'GET',
+    });
+    return res.data;
+  }
+
+  /**
+   * PATCH /api/v1/contractors/:id/status
+   * Updates contractor company status in a plant (active, suspended, blocked, pending).
+   */
+  public async updateContractorStatus(
+    contractorId: string,
+    payload: UpdateContractorStatusPayload
+  ): Promise<{ message: string }> {
+    const res = await this.request<{ message: string }>(`/contractors/${encodeURIComponent(contractorId)}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    });
+    return res.data;
+  }
+
+  /**
+   * GET /api/v1/contractors/my-company
+   * Retrieves company information for the logged-in contractor admin.
+   */
+  public async getMyContractorCompany(): Promise<ContractorItem> {
+    const res = await this.request<ContractorItem>('/contractors/my-company', {
+      method: 'GET',
+    });
+    return res.data;
+  }
+
+  /**
+   * GET /api/v1/contractors/workers?contractor_id=...
+   * Lists all crew workers registered under a contractor.
+   */
+  public async listContractorWorkers(contractorId?: string): Promise<ContractorWorkerItem[]> {
+    const qs = contractorId ? `?contractor_id=${encodeURIComponent(contractorId)}` : '';
+    const res = await this.request<ContractorWorkerItem[]>(`/contractors/workers${qs}`, {
+      method: 'GET',
+    });
+    return res.data;
+  }
+
+  /**
+   * POST /api/v1/contractors/workers
+   * Registers a new worker in the contractor's crew.
+   */
+  public async addContractorWorker(payload: AddContractorWorkerPayload): Promise<ContractorWorkerItem> {
+    const res = await this.request<ContractorWorkerItem>('/contractors/workers', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    return res.data;
+  }
+
+  /**
+   * PATCH /api/v1/contractors/workers/:id/status
+   * Activates or deactivates a worker in the crew.
+   */
+  public async toggleContractorWorkerStatus(
+    workerId: string,
+    isActive: boolean,
+    contractorId?: string
+  ): Promise<{ worker_id: string; is_active: boolean; message: string }> {
+    const payload: ToggleWorkerStatusPayload = {
+      is_active: isActive,
+      contractor_id: contractorId,
+    };
+    const res = await this.request<{ worker_id: string; is_active: boolean; message: string }>(
+      `/contractors/workers/${encodeURIComponent(workerId)}/status`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
       }
     );
     return res.data;
