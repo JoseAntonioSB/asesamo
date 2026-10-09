@@ -58,6 +58,15 @@ func (h *AccessHandler) CheckIn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if workerUUID == uuid.Nil {
+		dto.WriteError(w, domainErrors.ErrWorkerNotFound)
+		return
+	}
+	if apUUID == uuid.Nil {
+		dto.WriteError(w, domainErrors.ErrAccessPointNotFound)
+		return
+	}
+
 	var guardIDPtr *uuid.UUID
 	if guardUserID != uuid.Nil {
 		guardIDPtr = &guardUserID
@@ -95,6 +104,11 @@ func (h *AccessHandler) CheckOut(w http.ResponseWriter, r *http.Request) {
 	workerUUID, plantUUID, apUUID, err := req.Validate()
 	if err != nil {
 		dto.WriteError(w, err)
+		return
+	}
+
+	if workerUUID == uuid.Nil {
+		dto.WriteError(w, domainErrors.ErrWorkerNotFound)
 		return
 	}
 

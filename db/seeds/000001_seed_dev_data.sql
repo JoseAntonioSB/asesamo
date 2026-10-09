@@ -355,7 +355,7 @@ FROM document_types dt
 WHERE dt.code = 'REPSE' AND dt.tenant_id IS NULL
 ON CONFLICT (id) DO NOTHING;
 
--- Contractor SUA (Approved, valid for 25 more days)
+-- Contractor SUA (Approved, valid for 180 more days)
 INSERT INTO documents (
   id,
   contractor_id,
@@ -381,7 +381,7 @@ SELECT
   180000,
   'application/pdf',
   CURRENT_DATE - INTERVAL '5 days',
-  CURRENT_DATE + INTERVAL '25 days',
+  CURRENT_DATE + INTERVAL '180 days',
   'approved',
   '44444444-4444-4444-4444-444444444444',
   now() - INTERVAL '4 days'
@@ -389,7 +389,7 @@ FROM document_types dt
 WHERE dt.code = 'SUA' AND dt.tenant_id IS NULL
 ON CONFLICT (id) DO NOTHING;
 
--- Contractor SAT 32-D (Approved, supplementary)
+-- Contractor SAT 32-D (Approved, supplementary, valid for 180 more days)
 INSERT INTO documents (
   id,
   contractor_id,
@@ -415,7 +415,7 @@ SELECT
   120000,
   'application/pdf',
   CURRENT_DATE - INTERVAL '10 days',
-  CURRENT_DATE + INTERVAL '20 days',
+  CURRENT_DATE + INTERVAL '180 days',
   'approved',
   '44444444-4444-4444-4444-444444444444',
   now() - INTERVAL '9 days'

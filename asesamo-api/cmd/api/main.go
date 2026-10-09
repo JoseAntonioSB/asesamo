@@ -15,8 +15,12 @@ import (
 	adapterHTTP "asesamo-api/internal/adapter/http"
 	"asesamo-api/internal/adapter/http/handler"
 	"asesamo-api/internal/adapter/postgres"
+	"asesamo-api/internal/adapter/storage"
 	"asesamo-api/internal/core/usecase/access"
 	"asesamo-api/internal/core/usecase/auth"
+	"asesamo-api/internal/core/usecase/document"
+	"asesamo-api/internal/core/usecase/user"
+	"asesamo-api/internal/core/usecase/worker"
 	"asesamo-api/internal/infra/config"
 	"asesamo-api/internal/infra/database"
 )
@@ -45,13 +49,18 @@ func main() {
 	}()
 	log.Println("Database connection pool established and verified successfully.")
 
-	// 3. Clean Architecture Dependency Injection
 	// Repositories (outbound adapters)
 	userRepo := postgres.NewUserRepository(db.DB)
 	accessPointRepo := postgres.NewAccessPointRepository(db.DB)
 	plantRepo := postgres.NewPlantRepository(db.DB)
 	accessLogRepo := postgres.NewAccessLogRepository(db.DB)
 	complianceRepo := postgres.NewComplianceRepository(db.DB)
+	docRepo := postgres.NewDocumentRepository(db.DB)
+
+	storageService, err := storage.NewLocalStorageService(cfg.StorageDir)
+	if err != nil {
+		log.Fatalf("Fatal storage error: %v", err)
+	}
 
 	// Use cases (core business logic)
 	loginUseCase := auth.NewLoginUseCase(userRepo, cfg.JWTSecret)
@@ -60,11 +69,29 @@ func main() {
 	checkOutUseCase := access.NewCheckOutUseCase(accessLogRepo, accessPointRepo)
 	listAccessLogsUseCase := access.NewListAccessLogsUseCase(accessLogRepo)
 
+	uploadDocUseCase := document.NewUploadDocumentUseCase(docRepo, storageService)
+	listMyDocsUseCase := document.NewListMyDocumentsUseCase(docRepo)
+	downloadDocUseCase := document.NewDownloadDocumentUseCase(docRepo, storageService)
+	listDocTypesUseCase := document.NewListDocumentTypesUseCase(docRepo)
+	reviewDocUseCase := document.NewReviewDocumentUseCase(docRepo)
+	listPendingDocsUseCase := document.NewListPendingDocumentsUseCase(docRepo)
+	updateThemeUseCase := user.NewUpdateThemeUseCase(userRepo)
+	getCredentialUseCase := worker.NewGetCredentialUseCase(userRepo, plantRepo, complianceRepo)
+
 	// Handlers (inbound adapters)
 	healthHandler := handler.NewHealthHandler(db, "1.0.0")
 	authHandler := handler.NewAuthHandler(loginUseCase)
 	accessPointHandler := handler.NewAccessPointHandler(listAccessPointsUseCase)
 	accessHandler := handler.NewAccessHandler(checkInUseCase, checkOutUseCase, listAccessLogsUseCase)
+	docHandler := handler.NewDocumentHandler(uploadDocUseCase, listMyDocsUseCase, downloadDocUseCase, listDocTypesUseCase)
+	docHandler.SetReviewUseCases(reviewDocUseCase, listPendingDocsUseCase)
+	userHandler := handler.NewUserHandler(updateThemeUseCase)
+	workerHandler := handler.NewWorkerHandler(getCredentialUseCase)
+
+	loginLimit := 100
+	if cfg.AppEnv == config.EnvProduction {
+		loginLimit = 10
+	}
 
 	// 4. Assemble HTTP Router
 	router := adapterHTTP.NewRouter(adapterHTTP.RouterConfig{
@@ -72,8 +99,12 @@ func main() {
 		AuthHandler:        authHandler,
 		AccessPointHandler: accessPointHandler,
 		AccessHandler:      accessHandler,
+		DocumentHandler:    docHandler,
+		UserHandler:        userHandler,
+		WorkerHandler:      workerHandler,
 		JWTSecret:          cfg.JWTSecret,
 		CORSOrigins:        cfg.CORSAllowedOrigins,
+		LoginRateLimit:     loginLimit,
 	})
 
 	serverAddr := fmt.Sprintf(":%d", cfg.AppPort)

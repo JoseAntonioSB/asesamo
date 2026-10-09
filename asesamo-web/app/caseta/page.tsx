@@ -3,6 +3,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import {
   Shield,
   Building,
@@ -12,9 +13,14 @@ import {
   ScanBarcode,
   AlertCircle,
   DoorOpen,
+  FileText,
+  FileStack,
+  Printer,
+  QrCode,
 } from 'lucide-react';
 
 import { StatusBanner } from '@/components/caseta/status-banner';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { WorkerCard } from '@/components/caseta/worker-card';
 import { DocumentTable } from '@/components/caseta/document-table';
 import { ScannerInput } from '@/components/caseta/scanner-input';
@@ -66,6 +72,10 @@ export default function CasetaPage() {
 
   // Guard info
   const guardName = user?.full_name || 'Oficial Roberto Caseta';
+  const isEhsOrAdmin =
+    user?.role === 'ehs_manager' ||
+    user?.role === 'plant_admin' ||
+    user?.role === 'super_admin';
 
   // Guard auth check
   useEffect(() => {
@@ -236,7 +246,39 @@ export default function CasetaPage() {
           </div>
 
           {/* Right: Sound toggle, Guard Info & Logout */}
-          <div className="flex items-center gap-3 w-full md:w-auto justify-end">
+          <div className="flex items-center gap-2 sm:gap-3 w-full md:w-auto justify-end">
+            {/* Link to Documentos */}
+            <Link
+              href="/documentos"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
+              title="Ir al expediente de documentos"
+            >
+              <FileText className="h-3.5 w-3.5 text-emerald-400" />
+              <span className="hidden sm:inline">Documentos</span>
+            </Link>
+
+            {/* Link to Credencial Digital */}
+            <Link
+              href="/credencial"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-xs font-semibold text-cyan-300 hover:text-white hover:bg-slate-800 transition-colors"
+              title="Ver Credencial Móvil / QR del Trabajador"
+            >
+              <QrCode className="h-3.5 w-3.5 text-cyan-400" />
+              <span className="hidden sm:inline">Credencial</span>
+            </Link>
+
+            {/* Link to Bandeja EHS (if EHS or Admin) */}
+            {isEhsOrAdmin && (
+              <Link
+                href="/ehs/aprobaciones"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-amber-800/60 bg-amber-950/30 px-3 py-2 text-xs font-semibold text-amber-300 hover:text-white hover:bg-amber-900/50 transition-colors"
+                title="Bandeja de Aprobación y Dictamen EHS"
+              >
+                <FileStack className="h-3.5 w-3.5 text-amber-400" />
+                <span className="hidden sm:inline">Bandeja EHS</span>
+              </Link>
+            )}
+
             {/* Audio chime toggle */}
             <button
               type="button"
@@ -246,6 +288,9 @@ export default function CasetaPage() {
             >
               {isMuted ? <VolumeX className="h-4 w-4 text-rose-400" /> : <Volume2 className="h-4 w-4 text-emerald-400" />}
             </button>
+
+            {/* Theme Toggle */}
+            <ThemeToggle />
 
             {/* Guard Profile Badge */}
             <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl border border-slate-800 bg-slate-900/80">
@@ -360,6 +405,19 @@ export default function CasetaPage() {
               denialReason={checkInResult.denial_reason}
               checkedInAt={checkInResult.checked_in_at}
             />
+
+            {/* Quick Action Bar for Audit Print */}
+            <div className="flex justify-end no-print">
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-800 bg-slate-900 text-xs text-slate-300 hover:text-white hover:bg-slate-800 active:scale-95 transition-all cursor-pointer font-medium"
+                title="Imprimir o guardar dictamen de acceso para auditoría"
+              >
+                <Printer className="w-3.5 h-3.5 text-slate-400" />
+                <span>Imprimir Ficha de Acceso</span>
+              </button>
+            </div>
 
             {/* Profile & Document Breakdown Columns */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">

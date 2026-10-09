@@ -119,6 +119,7 @@ CREATE TABLE users (
   -- QR code: the UUID itself is used as the QR payload
   -- (no separate field needed — the QR encodes this id)
   avatar_r2_key   TEXT,                                      -- profile photo in R2
+  theme_preference TEXT       DEFAULT 'system' CHECK (theme_preference IN ('light', 'dark', 'system')),
   is_active       BOOLEAN     NOT NULL DEFAULT TRUE,
   last_login_at   TIMESTAMPTZ,
   created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),

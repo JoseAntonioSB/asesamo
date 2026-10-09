@@ -91,17 +91,17 @@ export function WorkerCard({ worker, contractor, plant, result = 'granted' }: Wo
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-6">
         {/* CURP */}
         <div className="flex flex-col justify-between rounded-xl border border-slate-800 bg-slate-950/60 p-3.5">
-          <div className="flex items-center justify-between text-xs text-slate-400 mb-1">
-            <span className="font-medium uppercase tracking-wider">CURP</span>
+          <div className="flex items-center justify-between text-xs text-slate-300 mb-1">
+            <span className="font-semibold uppercase tracking-wider">CURP</span>
             <button
               onClick={() => copyToClipboard(worker.curp || '', 'curp')}
-              className="text-slate-400 hover:text-white transition-colors cursor-pointer"
-              title="Copiar CURP"
+              className="h-8 w-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 active:scale-95 transition-all cursor-pointer"
+              title="Copiar CURP al portapapeles"
             >
               {copiedField === 'curp' ? (
-                <Check className="h-3.5 w-3.5 text-emerald-400" />
+                <Check className="h-4 w-4 text-emerald-400" />
               ) : (
-                <Copy className="h-3.5 w-3.5" />
+                <Copy className="h-4 w-4" />
               )}
             </button>
           </div>
@@ -112,17 +112,17 @@ export function WorkerCard({ worker, contractor, plant, result = 'granted' }: Wo
 
         {/* NSS / IMSS */}
         <div className="flex flex-col justify-between rounded-xl border border-slate-800 bg-slate-950/60 p-3.5">
-          <div className="flex items-center justify-between text-xs text-slate-400 mb-1">
-            <span className="font-medium uppercase tracking-wider">NSS (IMSS)</span>
+          <div className="flex items-center justify-between text-xs text-slate-300 mb-1">
+            <span className="font-semibold uppercase tracking-wider">NSS (IMSS)</span>
             <button
               onClick={() => copyToClipboard(worker.imss_number || '', 'imss')}
-              className="text-slate-400 hover:text-white transition-colors cursor-pointer"
-              title="Copiar NSS"
+              className="h-8 w-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 active:scale-95 transition-all cursor-pointer"
+              title="Copiar NSS al portapapeles"
             >
               {copiedField === 'imss' ? (
-                <Check className="h-3.5 w-3.5 text-emerald-400" />
+                <Check className="h-4 w-4 text-emerald-400" />
               ) : (
-                <Copy className="h-3.5 w-3.5" />
+                <Copy className="h-4 w-4" />
               )}
             </button>
           </div>
@@ -133,9 +133,9 @@ export function WorkerCard({ worker, contractor, plant, result = 'granted' }: Wo
 
         {/* RFC Contratista */}
         <div className="flex flex-col justify-between rounded-xl border border-slate-800 bg-slate-950/60 p-3.5">
-          <div className="flex items-center justify-between text-xs text-slate-400 mb-1">
-            <span className="font-medium uppercase tracking-wider">RFC Empresa</span>
-            <CreditCard className="h-3.5 w-3.5 text-slate-500" />
+          <div className="flex items-center justify-between text-xs text-slate-300 mb-1">
+            <span className="font-semibold uppercase tracking-wider">RFC Empresa</span>
+            <CreditCard className="h-4 w-4 text-slate-400" />
           </div>
           <p className="font-mono text-sm font-semibold text-slate-200">
             {contractor.rfc || 'NO REGISTRADO'}
@@ -144,9 +144,9 @@ export function WorkerCard({ worker, contractor, plant, result = 'granted' }: Wo
 
         {/* REPSE Contratista */}
         <div className="flex flex-col justify-between rounded-xl border border-slate-800 bg-slate-950/60 p-3.5">
-          <div className="flex items-center justify-between text-xs text-slate-400 mb-1">
-            <span className="font-medium uppercase tracking-wider">Registro REPSE</span>
-            <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" />
+          <div className="flex items-center justify-between text-xs text-slate-300 mb-1">
+            <span className="font-semibold uppercase tracking-wider">Registro REPSE</span>
+            <ShieldCheck className="h-4 w-4 text-emerald-400" />
           </div>
           <p className="font-mono text-sm font-semibold text-emerald-300">
             {contractor.repse_number || 'EN TRÁMITE'}
@@ -155,11 +155,11 @@ export function WorkerCard({ worker, contractor, plant, result = 'granted' }: Wo
       </div>
 
       {/* UUID Footer Bar */}
-      <div className="mt-4 flex items-center justify-between rounded-lg bg-slate-950/40 px-3 py-2 text-[11px] text-slate-400 border border-slate-800/60">
-        <span className="truncate">UUID: {worker.user_id}</span>
+      <div className="mt-4 flex items-center justify-between rounded-lg bg-slate-950/40 px-3 py-2 text-xs text-slate-300 border border-slate-800/60">
+        <span className="truncate font-mono">UUID: {worker.user_id}</span>
         <button
           onClick={() => copyToClipboard(worker.user_id, 'uuid')}
-          className="ml-2 inline-flex items-center gap-1 font-semibold text-slate-300 hover:text-white cursor-pointer"
+          className="ml-2 inline-flex items-center gap-1 font-semibold text-emerald-400 hover:text-emerald-300 active:scale-95 transition-all cursor-pointer py-1 px-2 rounded hover:bg-slate-800"
         >
           {copiedField === 'uuid' ? 'Copiado' : 'Copiar'}
         </button>

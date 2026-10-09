@@ -49,6 +49,12 @@ func (m *MockUserRepoForRouterTest) UpdateLastLogin(ctx context.Context, id uuid
 	return args.Error(0)
 }
 
+func (m *MockUserRepoForRouterTest) UpdateThemePreference(ctx context.Context, id uuid.UUID, theme string) error {
+	args := m.Called(ctx, id, theme)
+	return args.Error(0)
+}
+
+
 type MockAccessPointRepoForRouterTest struct {
 	mock.Mock
 }

@@ -10,11 +10,12 @@ type LoginRequest struct {
 
 // UserProfileResponse represents sanitized user information returned upon login.
 type UserProfileResponse struct {
-	ID       uuid.UUID  `json:"id"`
-	TenantID *uuid.UUID `json:"tenant_id,omitempty"`
-	Email    string     `json:"email"`
-	FullName string     `json:"full_name"`
-	Role     string     `json:"role"`
+	ID              uuid.UUID  `json:"id"`
+	TenantID        *uuid.UUID `json:"tenant_id,omitempty"`
+	Email           string     `json:"email"`
+	FullName        string     `json:"full_name"`
+	Role            string     `json:"role"`
+	ThemePreference string     `json:"theme_preference"`
 }
 
 // LoginResponseData represents data payload returned upon successful login.
@@ -22,3 +23,9 @@ type LoginResponseData struct {
 	Token string              `json:"token"`
 	User  UserProfileResponse `json:"user"`
 }
+
+// UpdateThemeRequest represents payload for PATCH /api/v1/users/me/theme.
+type UpdateThemeRequest struct {
+	Theme string `json:"theme"`
+}
+

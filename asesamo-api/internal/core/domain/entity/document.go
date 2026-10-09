@@ -21,8 +21,14 @@ type Document struct {
 	ID              uuid.UUID      `json:"id"`
 	UserID          *uuid.UUID     `json:"user_id,omitempty"`
 	ContractorID    *uuid.UUID     `json:"contractor_id,omitempty"`
-	DocumentTypeID  uuid.UUID      `json:"document_type_id"`
-	R2Key           string         `json:"r2_key"`
+	DocumentTypeID   uuid.UUID      `json:"document_type_id"`
+	DocumentTypeCode string         `json:"document_type_code,omitempty"`
+	DocumentTypeName string         `json:"document_type_name,omitempty"`
+	OwnerName        string         `json:"owner_name,omitempty"`
+	OwnerType        string         `json:"owner_type,omitempty"` // "worker" | "contractor"
+	ContractorName   string         `json:"contractor_name,omitempty"`
+	ReviewedByName   string         `json:"reviewed_by_name,omitempty"`
+	R2Key            string         `json:"r2_key"`
 	FileName        string         `json:"file_name"`
 	FileSizeBytes   *int           `json:"file_size_bytes,omitempty"`
 	MimeType        *string        `json:"mime_type,omitempty"`

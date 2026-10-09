@@ -195,4 +195,24 @@ var (
 		Message:    "Demasiadas solicitudes. Intente más tarde.",
 		HTTPStatus: http.StatusTooManyRequests,
 	}
+	ErrInvalidFileType = &AppError{
+		Code:       "INVALID_FILE_TYPE",
+		Message:    "Tipo de archivo no permitido. Solo se aceptan documentos PDF e imágenes JPEG o PNG.",
+		HTTPStatus: http.StatusBadRequest,
+	}
+	ErrFileTooLarge = &AppError{
+		Code:       "FILE_TOO_LARGE",
+		Message:    "El archivo excede el tamaño máximo permitido de 10 MB.",
+		HTTPStatus: http.StatusBadRequest,
+	}
+	ErrDocumentNotFound = &AppError{
+		Code:       "DOCUMENT_NOT_FOUND",
+		Message:    "Documento no encontrado o no autorizado.",
+		HTTPStatus: http.StatusNotFound,
+	}
+	ErrDocumentTypeNotFound = &AppError{
+		Code:       "DOCUMENT_TYPE_NOT_FOUND",
+		Message:    "Tipo de documento no encontrado o no configurado.",
+		HTTPStatus: http.StatusNotFound,
+	}
 )

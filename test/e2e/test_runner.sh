@@ -34,12 +34,13 @@ ${BOLD}USAGE:${NC}
   $0 [OPTIONS]
 
 ${BOLD}OPTIONS:${NC}
-  -t, --tier <1|2|3|4>    Execute only the specified test tier:
+  -t, --tier <1|2|3|4|5>  Execute only the specified test tier:
                             1: Feature Coverage (Login, Check-in, Access points, Logs)
                             2: Boundary & Corner Cases (Expired JWT, Malformed UUIDs, Isolation)
                             3: Cross-Feature Combinations (Full audit lifecycles)
                             4: Industrial Shift Workload (15 rapid worker arrivals, SLA check)
-  -a, --all               Run all 4 tiers in succession (Default)
+                            5: White-Box Adversarial Hardening (SQLi, Nil UUID, Concurrency, Isolation)
+  -a, --all               Run all 5 tiers in succession (Default)
   -u, --url <URL>         Target API Base URL (Default: ${API_BASE_URL})
   -v, --verbose           Enable verbose curl logging
   -h, --help              Show this help message
@@ -110,6 +111,7 @@ TIER_NAMES=(
   "Tier 2: Boundary & Corner Cases"
   "Tier 3: Cross-Feature Combinations"
   "Tier 4: Industrial Shift Workload"
+  "Tier 5: White-Box Adversarial Hardening"
 )
 
 TIER_SCRIPTS=(
@@ -117,13 +119,14 @@ TIER_SCRIPTS=(
   "${SCRIPT_DIR}/tier2_boundary_test.sh"
   "${SCRIPT_DIR}/tier3_combination_test.sh"
   "${SCRIPT_DIR}/tier4_workload_test.sh"
+  "${SCRIPT_DIR}/tier5_whitebox_adversarial_probe.sh"
 )
 
-TIER_RESULTS=(0 0 0 0)
-TIER_EXECUTED=(false false false false)
+TIER_RESULTS=(0 0 0 0 0)
+TIER_EXECUTED=(false false false false false)
 
 run_single_tier() {
-  local tier_idx="$1" # 0-indexed (0 to 3)
+  local tier_idx="$1" # 0-indexed (0 to 4)
   local tier_num=$((tier_idx + 1))
   local script="${TIER_SCRIPTS[$tier_idx]}"
   local name="${TIER_NAMES[$tier_idx]}"
@@ -155,13 +158,14 @@ case "$SELECTED_TIER" in
   2) run_single_tier 1 ;;
   3) run_single_tier 2 ;;
   4) run_single_tier 3 ;;
+  5) run_single_tier 4 ;;
   all)
-    for i in 0 1 2 3; do
+    for i in 0 1 2 3 4; do
       run_single_tier "$i"
     done
     ;;
   *)
-    echo -e "${RED}[ERROR] Invalid tier: ${SELECTED_TIER}. Choose 1, 2, 3, 4, or 'all'.${NC}"
+    echo -e "${RED}[ERROR] Invalid tier: ${SELECTED_TIER}. Choose 1, 2, 3, 4, 5, or 'all'.${NC}"
     exit 2
     ;;
 esac
@@ -179,7 +183,7 @@ echo -e "  Target API URL:    ${API_BASE_URL}"
 echo -e "  Total Duration:    ${RUNNER_DURATION}s"
 echo -e "  Executed Tiers:"
 
-for i in 0 1 2 3; do
+for i in 0 1 2 3 4; do
   if [ "${TIER_EXECUTED[$i]}" = true ]; then
     if [ "${TIER_RESULTS[$i]}" -eq 0 ]; then
       echo -e "    ${GREEN}✔ ${TIER_NAMES[$i]}: PASSED${NC}"

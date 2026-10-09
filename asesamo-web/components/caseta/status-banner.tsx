@@ -63,7 +63,7 @@ export function StatusBanner({
       >
         <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5 text-center sm:text-left">
           <div className="flex h-16 w-16 md:h-20 md:w-20 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shadow-inner shadow-emerald-500/20">
-            <CheckCircle2 className="h-10 w-10 md:h-12 md:w-12 animate-in zoom-in-75 duration-300" />
+            <CheckCircle2 className="h-10 w-10 md:h-12 md:w-12 animate-in zoom-in-95 duration-200" />
           </div>
           <div className="flex-1 space-y-2">
             <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
@@ -100,7 +100,7 @@ export function StatusBanner({
       >
         <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5 text-center sm:text-left">
           <div className="flex h-16 w-16 md:h-20 md:w-20 shrink-0 items-center justify-center rounded-2xl bg-amber-500/20 text-amber-400 border border-amber-500/40 shadow-inner shadow-amber-500/20">
-            <AlertTriangle className="h-10 w-10 md:h-12 md:w-12 animate-in bounce-in duration-300" />
+            <AlertTriangle className="h-10 w-10 md:h-12 md:w-12 animate-in zoom-in-95 duration-200" />
           </div>
           <div className="flex-1 space-y-2">
             <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
@@ -137,7 +137,7 @@ export function StatusBanner({
     >
       <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5 text-center sm:text-left">
         <div className="flex h-16 w-16 md:h-20 md:w-20 shrink-0 items-center justify-center rounded-2xl bg-red-500/20 text-red-400 border border-red-500/40 shadow-inner shadow-red-500/20">
-          <XCircle className="h-10 w-10 md:h-12 md:w-12 animate-in zoom-in-75 duration-300" />
+          <XCircle className="h-10 w-10 md:h-12 md:w-12 animate-in zoom-in-95 duration-200" />
         </div>
         <div className="flex-1 space-y-3">
           <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">

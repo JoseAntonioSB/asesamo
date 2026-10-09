@@ -4,36 +4,36 @@
 
 @layer base {
   :root {
-    /* Industrial High-Contrast Dark Slate Substrate */
-    --background: 222 47% 7%;        /* #0a0f1d - Deep industrial slate */
-    --foreground: 210 40% 98%;       /* #f8fafc - Crisp white */
+    /* Industrial Crisp Light Theme (for Administrative oversight) */
+    --background: 210 40% 98%;        /* #f8fafc - Crisp light background */
+    --foreground: 222 47% 11%;       /* #0f172a - Deep slate */
 
-    --card: 222 47% 10%;             /* #0e1626 - Elevated technical surface */
-    --card-foreground: 210 40% 98%;
+    --card: 0 0% 100%;               /* #ffffff - Pure white elevated card */
+    --card-foreground: 222 47% 11%;
 
-    --popover: 222 47% 10%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
 
-    --primary: 210 40% 98%;          /* High-contrast element fill */
-    --primary-foreground: 222 47% 7%;
+    --primary: 222 47% 11%;          /* #0f172a - Deep contrast primary */
+    --primary-foreground: 210 40% 98%;
 
-    --secondary: 217 33% 17%;        /* Dark tactical secondary button / panel */
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96%;        /* #f1f5f9 - Light secondary button */
+    --secondary-foreground: 222 47% 11%;
 
-    --muted: 217 33% 15%;            /* Muted telemetry indicators */
-    --muted-foreground: 215 20% 65%; /* Readable secondary labels */
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%; /* #64748b */
 
-    --accent: 217 33% 20%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 210 40% 96%;
+    --accent-foreground: 222 47% 11%;
 
-    --destructive: 0 84% 60%;        /* Denied crimson red */
+    --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 217 33% 20%;           /* Crisp precision dividing lines */
-    --input: 217 33% 20%;
-    --ring: 212 96% 57%;             /* High-visibility active focus ring */
+    --border: 214 32% 91%;           /* #e2e8f0 - Crisp dividing line */
+    --input: 214 32% 91%;
+    --ring: 222 47% 11%;
 
-    --radius: 0.375rem;              /* 6px - Precision industrial corner */
+    --radius: 0.375rem;
 
     /* Dedicated Industrial Telemetry Tokens */
     --granted: 142 71% 45%;          /* Emerald Green #10b981 */
@@ -90,14 +90,134 @@
     @apply border-border;
   }
 
-  html {
+  html.dark {
     color-scheme: dark;
+  }
+
+  html:not(.dark) {
+    color-scheme: light;
   }
 
   body {
     @apply bg-background text-foreground antialiased;
     font-feature-settings: "rlig" 1, "calt" 1, "tnum" 1;
   }
+}
+
+/* ==========================================================================
+   LIGHT MODE INDUSTRIAL THEME (Administrative & Plant Management)
+   ========================================================================== */
+html:not(.dark) body {
+  background-color: #f8fafc;
+  color: #0f172a;
+}
+
+/* Page containers & background surfaces */
+html:not(.dark) .min-h-screen.bg-slate-950,
+html:not(.dark) .bg-slate-950 {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+html:not(.dark) header.bg-slate-950\/90,
+html:not(.dark) header.bg-slate-900\/90,
+html:not(.dark) .bg-slate-900,
+html:not(.dark) .bg-slate-900\/90,
+html:not(.dark) .bg-slate-900\/80,
+html:not(.dark) .bg-slate-900\/50 {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+}
+
+html:not(.dark) .bg-slate-800,
+html:not(.dark) .bg-slate-800\/50,
+html:not(.dark) .bg-slate-800\/60,
+html:not(.dark) .bg-slate-800\/80 {
+  background-color: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+}
+
+/* Borders */
+html:not(.dark) .border-slate-800,
+html:not(.dark) .border-slate-800\/60,
+html:not(.dark) .border-slate-700,
+html:not(.dark) .border-slate-700\/70,
+html:not(.dark) .border-slate-700\/80 {
+  border-color: #e2e8f0 !important;
+}
+
+/* Text Hierarchy */
+html:not(.dark) .text-white {
+  color: #0f172a !important;
+}
+
+html:not(.dark) .text-slate-100 {
+  color: #0f172a !important;
+}
+
+html:not(.dark) .text-slate-200 {
+  color: #1e293b !important;
+}
+
+html:not(.dark) .text-slate-300 {
+  color: #334155 !important;
+}
+
+html:not(.dark) .text-slate-400 {
+  color: #64748b !important;
+}
+
+/* Form controls in light mode */
+html:not(.dark) input:not([type="checkbox"]):not([type="radio"]),
+html:not(.dark) select,
+html:not(.dark) textarea {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
+html:not(.dark) input::placeholder,
+html:not(.dark) textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+/* Preserve bright white text inside filled badges, action buttons, and status chips */
+html:not(.dark) button.bg-emerald-600,
+html:not(.dark) button.bg-emerald-500,
+html:not(.dark) button.bg-rose-600,
+html:not(.dark) button.bg-amber-500,
+html:not(.dark) .bg-emerald-600,
+html:not(.dark) .bg-emerald-500,
+html:not(.dark) .bg-rose-600,
+html:not(.dark) .bg-amber-600,
+html:not(.dark) .bg-emerald-600 *,
+html:not(.dark) .bg-emerald-500 *,
+html:not(.dark) .bg-rose-600 *,
+html:not(.dark) .bg-amber-600 * {
+  color: #ffffff !important;
+}
+
+/* Secondary & ghost buttons hover states in light mode */
+html:not(.dark) button.hover\:bg-slate-800:hover,
+html:not(.dark) a.hover\:bg-slate-800:hover {
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+
+/* Scrollbars in light mode */
+html:not(.dark)::-webkit-scrollbar-track,
+html:not(.dark) ::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+html:not(.dark)::-webkit-scrollbar-thumb,
+html:not(.dark) ::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+}
+
+html:not(.dark)::-webkit-scrollbar-thumb:hover,
+html:not(.dark) ::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
 
 /* Precision Tactical Scrollbars */
@@ -117,4 +237,53 @@
 
 ::-webkit-scrollbar-thumb:hover {
   background: hsl(217 33% 35%);
+}
+
+/* Physics-based Easing Tokens & Tactile Motion */
+:root {
+  --ease-out-industrial: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out-industrial: cubic-bezier(0.77, 0, 0.175, 1);
+}
+
+/* Industrial Audit & Official Inspection Print Stylesheet (NOM-STPS / Protección Civil) */
+@media print {
+  html, body {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    color-scheme: light !important;
+  }
+
+  header, nav, .no-print, button:not(.print-include), input, [role="tablist"] {
+    display: none !important;
+  }
+
+  * {
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  .bg-slate-900, .bg-slate-950, .bg-slate-900\/95, .bg-slate-950\/80, .bg-slate-950\/60 {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    border-color: #cbd5e1 !important;
+  }
+
+  .text-white, .text-slate-100, .text-slate-200 {
+    color: #0f172a !important;
+  }
+
+  .text-slate-300, .text-slate-400, .text-slate-500 {
+    color: #475569 !important;
+  }
+
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+
+  th, td {
+    border: 1px solid #cbd5e1 !important;
+    padding: 6px 10px !important;
+    color: #0f172a !important;
+  }
 }

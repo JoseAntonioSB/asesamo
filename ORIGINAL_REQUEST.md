@@ -44,3 +44,56 @@ Provide a root `docker-compose.yml` and environment configuration allowing the e
 ### End-to-End User Flow
 - [ ] A guard can sign in through the Next.js UI using test credentials.
 - [ ] From the Caseta UI, submitting a test worker UUID executes the check-in and renders the granted/denied compliance result card in the browser.
+
+
+## Follow-up — 2026-10-08T14:58:25Z
+
+notifica a tu padre lo que se hizo
+
+
+## Follow-up — 2026-10-08T21:40:19Z
+
+Build the complete Document Upload module for ASESAMO: an end-to-end capability allowing contractors and workers to upload compliance documents (DC-3, REPSE, SUA, INE, Medical) with metadata, persisted via an abstract storage interface (local disk volume in development, ready for Cloudflare R2/S3 in production), integrated into the Go backend API and Next.js web application.
+
+Working directory: /Users/jasbotello/devel/asesamo
+Integrity mode: demo
+
+Reference materials:
+- Architecture & standards: `DEVELOPMENT_RULES.md`
+- Database schema: `db/migrations/000001_init.up.sql`
+- Existing backend: `asesamo-api`
+- Existing frontend: `asesamo-web`
+
+## Requirements
+
+### R1. Backend Storage Adapter & Clean Architecture Domain
+Implement a file storage abstraction in `asesamo-api` following Clean Architecture:
+- Define a domain `StorageService` interface (`Upload`, `GetURL`/`Download`, `Delete`).
+- Provide a `LocalStorageService` implementation saving files to a designated directory/volume with sanitized file keys conforming to `{tenant_id_or_global}/{entity_type}/{id}/{filename_uuid}.{ext}`.
+- Enforce file constraints: maximum size 10 MB, allowed MIME types (`application/pdf`, `image/jpeg`, `image/png`). Validate actual magic bytes, not just file extensions.
+
+### R2. Document Upload & Management Endpoints
+Implement REST endpoints in `asesamo-api` under authenticated routes:
+- `POST /api/v1/documents/upload`: accepts `multipart/form-data` containing the file, `document_type_code`, `issued_at`, and `expires_at`. Associates the document with the authenticated worker (`user_id`) or contractor (`contractor_id`), saves the file via `StorageService`, and inserts a record into the `documents` table with initial status `pending_review`.
+- `GET /api/v1/documents/my-documents`: returns list of uploaded documents and their review status for the authenticated user/contractor.
+- `GET /api/v1/documents/:id/download`: serves or streams the file content securely.
+- Ensure strict tenant isolation and error handling with Spanish user-facing messages.
+- Provide comprehensive unit and integration tests for storage, upload validation, and failure conditions.
+
+### R3. Frontend Document Upload UI
+Implement the user-facing upload workflow in `asesamo-web`:
+- Provide a responsive Document Management & Upload view allowing workers or contractors to view required documents and current status (`pending_review`, `approved`, `rejected`, `missing`).
+- Provide an accessible upload dialog/form using shadcn/ui and Tailwind CSS with document type selection, date pickers for issued/expiration dates, drag-and-drop / file selector, and upload progress/status indicator with toast notifications (`ask-sonner`).
+- Display clear client-side validation for file types and sizes before upload.
+
+## Acceptance Criteria
+
+### Storage & Backend Verification
+- [ ] Uploading a valid PDF or JPG file via `POST /api/v1/documents/upload` succeeds with HTTP 201/200, saves the file to disk, and creates a row in `documents` with status `pending_review`.
+- [ ] Attempting to upload a file exceeding 10 MB or with an unauthorized MIME type (e.g., `.exe`, `.txt`) is rejected with HTTP 400/422 and a Spanish error message without corrupting storage.
+- [ ] `GET /api/v1/documents/my-documents` returns the uploaded documents with their status and metadata in the standard `{ "data": ... }` envelope.
+- [ ] All Go tests across `asesamo-api` (`go test ./...`) pass with zero failures.
+
+### Frontend Web Flow Verification
+- [ ] An authenticated worker or contractor can navigate to the document management screen in `asesamo-web`.
+- [ ] Submitting a file through the upload UI uploads the document, displays success feedback via toast, and refreshes the document list showing the item as "Pendiente de revisión".

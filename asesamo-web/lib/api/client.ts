@@ -15,6 +15,11 @@ import {
   CheckOutRequest,
   CheckOutOutput,
   AccessLogsQueryParams,
+  DocumentItem,
+  DocumentTypeItem,
+  UploadDocumentParams,
+  ReviewDocumentPayload,
+  WorkerCredentialResponse,
 } from './types';
 import { getStoredToken, setStoredToken, setStoredUser, clearAuthSession } from '../auth';
 
@@ -82,10 +87,17 @@ export class ApiClient {
 
     // Default headers
     const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
       Accept: 'application/json',
       ...((options.headers as Record<string, string>) || {}),
     };
+
+    if (!(options.body instanceof FormData)) {
+      if (!headers['Content-Type']) {
+        headers['Content-Type'] = 'application/json';
+      }
+    } else {
+      delete headers['Content-Type'];
+    }
 
     // Bearer token injection
     const token = getStoredToken();
@@ -256,6 +268,140 @@ export class ApiClient {
       logs: res.data || [],
       meta: res.meta,
     };
+  }
+
+  /**
+   * POST /api/v1/documents/upload
+   * Uploads compliance document via multipart/form-data.
+   */
+  public async uploadDocument(params: UploadDocumentParams): Promise<DocumentItem> {
+    const formData = new FormData();
+    formData.append('file', params.file);
+    formData.append('document_type_code', params.documentTypeCode);
+    if (params.issuedAt) formData.append('issued_at', params.issuedAt);
+    if (params.expiresAt) formData.append('expires_at', params.expiresAt);
+    if (params.workerId) formData.append('worker_id', params.workerId);
+    if (params.contractorId) formData.append('contractor_id', params.contractorId);
+
+    const res = await this.request<DocumentItem>('/documents/upload', {
+      method: 'POST',
+      body: formData,
+    });
+    return res.data;
+  }
+
+  /**
+   * GET /api/v1/documents/my-documents
+   * Retrieves documents for the authenticated worker or contractor.
+   */
+  public async getMyDocuments(params?: { worker_id?: string; contractor_id?: string }): Promise<DocumentItem[]> {
+    const query = new URLSearchParams();
+    if (params?.worker_id) query.set('worker_id', params.worker_id);
+    if (params?.contractor_id) query.set('contractor_id', params.contractor_id);
+    const qs = query.toString();
+    const endpoint = `/documents/my-documents${qs ? `?${qs}` : ''}`;
+
+    const res = await this.request<DocumentItem[]>(endpoint, {
+      method: 'GET',
+    });
+    return res.data || [];
+  }
+
+  /**
+   * GET /api/v1/documents/types
+   * Retrieves active document types catalog.
+   */
+  public async getDocumentTypes(): Promise<DocumentTypeItem[]> {
+    const res = await this.request<DocumentTypeItem[]>('/documents/types', {
+      method: 'GET',
+    });
+    return res.data || [];
+  }
+
+  /**
+   * GET /api/v1/documents/pending
+   * Retrieves documents awaiting review or filtered by status for EHS review tray.
+   */
+  public async getPendingDocuments(status?: string): Promise<DocumentItem[]> {
+    const query = new URLSearchParams();
+    if (status) query.set('status', status);
+    const qs = query.toString();
+    const endpoint = `/documents/pending${qs ? `?${qs}` : ''}`;
+
+    const res = await this.request<DocumentItem[]>(endpoint, {
+      method: 'GET',
+    });
+    return res.data || [];
+  }
+
+  /**
+   * POST /api/v1/documents/:id/review
+   * Approves or rejects a document with mandatory rejection reason if rejected.
+   */
+  public async reviewDocument(
+    docId: string,
+    action: 'approve' | 'reject',
+    rejectionReason?: string
+  ): Promise<DocumentItem> {
+    const payload: ReviewDocumentPayload = {
+      action,
+      rejection_reason: rejectionReason?.trim() || undefined,
+    };
+
+    const res = await this.request<DocumentItem>(`/documents/${docId}/review`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    return res.data;
+  }
+
+  /**
+   * Returns full download URL for a document.
+   */
+  public getDownloadUrl(docId: string): string {
+    return `${this.baseUrl}/documents/${docId}/download`;
+  }
+
+  /**
+   * PATCH /api/v1/users/me/theme
+   * Persists the user's theme preference in the database.
+   */
+  public async updateTheme(theme: 'light' | 'dark' | 'system'): Promise<{ theme: string }> {
+    const res = await this.request<{ theme: string }>('/users/me/theme', {
+      method: 'PATCH',
+      body: JSON.stringify({ theme }),
+    });
+    return res.data;
+  }
+
+  /**
+   * GET /api/v1/workers/me/credential
+   * Retrieves current authenticated worker's live credential and QR code.
+   */
+  public async getMyCredential(plantId?: string): Promise<WorkerCredentialResponse> {
+    const qs = plantId ? `?plant_id=${encodeURIComponent(plantId)}` : '';
+    const res = await this.request<WorkerCredentialResponse>(`/workers/me/credential${qs}`, {
+      method: 'GET',
+    });
+    return res.data;
+  }
+
+  /**
+   * GET /api/v1/workers/:id/credential
+   * Retrieves a specific worker's live credential, badge info, and QR code payload.
+   */
+  public async getWorkerCredential(
+    workerId: string,
+    plantId?: string
+  ): Promise<WorkerCredentialResponse> {
+    const qs = plantId ? `?plant_id=${encodeURIComponent(plantId)}` : '';
+    const res = await this.request<WorkerCredentialResponse>(
+      `/workers/${encodeURIComponent(workerId)}/credential${qs}`,
+      {
+        method: 'GET',
+      }
+    );
+    return res.data;
   }
 
   /**

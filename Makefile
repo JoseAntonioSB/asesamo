@@ -3,7 +3,7 @@
 # ============================================================
 
 .DEFAULT_GOAL := help
-.PHONY: help docker-up docker-down docker-down-v migrate-up migrate-down migrate-version migrate-force seed db-shell test test-integration lint build run sqlc
+.PHONY: help docker-up docker-down docker-down-v migrate-up migrate-down migrate-version migrate-force seed db-shell test test-integration lint build run sqlc verify
 
 # Load .env file if present
 ifneq (,$(wildcard ./.env))
@@ -40,6 +40,7 @@ help:
 	@echo "  make build            - Compile backend binary"
 	@echo "  make run              - Run backend service locally"
 	@echo "  make sqlc             - Generate Go code from SQL queries via sqlc"
+	@echo "  make verify           - Run automated smoke acceptance verification script"
 
 ## Start local docker-compose stack
 docker-up:
@@ -170,3 +171,9 @@ sqlc:
 	else \
 		echo "sqlc not found or asesamo-api directory missing."; \
 	fi
+
+## Run automated smoke acceptance verification
+verify:
+	@chmod +x scripts/verify_acceptance.sh
+	@./scripts/verify_acceptance.sh $(ARGS)
+

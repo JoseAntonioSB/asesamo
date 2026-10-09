@@ -9,6 +9,7 @@ import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
 import { ApiError } from '@/lib/api/client';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { ShieldCheck, AlertTriangle, KeyRound, UserCheck, Loader2 } from 'lucide-react';
 
 function LoginForm() {
@@ -86,6 +87,11 @@ function LoginForm() {
 
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col justify-center items-center px-4 sm:px-6 lg:px-8 selection:bg-emerald-500 selection:text-white relative">
+      {/* Top right Theme Toggle */}
+      <div className="absolute top-4 right-4 sm:top-6 sm:right-6 z-20">
+        <ThemeToggle showLabel />
+      </div>
+
       {/* Background radial accent */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-slate-950 pointer-events-none" />
 

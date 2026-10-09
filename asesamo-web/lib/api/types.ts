@@ -31,7 +31,7 @@ export interface PaginationMeta {
 // 2. Authentication & User Profile
 // ==========================================
 
-export type UserRole = 'guard' | 'plant_admin' | 'ehs_manager' | 'super_admin' | 'contractor';
+export type UserRole = 'guard' | 'plant_admin' | 'ehs_manager' | 'super_admin' | 'contractor' | 'contractor_admin' | 'worker';
 
 export interface UserProfile {
   id: string; // UUID
@@ -39,6 +39,62 @@ export interface UserProfile {
   email: string;
   full_name: string;
   role: UserRole | string;
+  theme_preference?: 'light' | 'dark' | 'system';
+}
+
+// ==========================================
+// 2.1 Document Management Models
+// ==========================================
+
+export type DocumentStatus = 'pending_review' | 'approved' | 'rejected' | 'expired';
+
+export interface DocumentItem {
+  id: string;
+  user_id?: string;
+  contractor_id?: string;
+  document_type_id: string;
+  document_type_code?: string;
+  document_type_name?: string;
+  owner_name?: string;
+  owner_type?: string;
+  contractor_name?: string;
+  file_name: string;
+  file_size_bytes?: number;
+  mime_type?: string;
+  issued_at?: string;
+  expires_at?: string;
+  status: DocumentStatus;
+  rejection_reason?: string;
+  reviewed_by?: string;
+  reviewed_by_name?: string;
+  reviewed_at?: string;
+  created_at: string;
+  updated_at: string;
+  download_url: string;
+}
+
+export interface ReviewDocumentPayload {
+  action: 'approve' | 'reject';
+  rejection_reason?: string;
+}
+
+export interface DocumentTypeItem {
+  id: string;
+  code: string;
+  name: string;
+  description?: string;
+  applies_to: string;
+  default_validity_days?: number;
+  is_required_default: boolean;
+}
+
+export interface UploadDocumentParams {
+  file: File;
+  documentTypeCode: string;
+  issuedAt?: string;
+  expiresAt?: string;
+  workerId?: string;
+  contractorId?: string;
 }
 
 export interface LoginRequest {
@@ -163,4 +219,43 @@ export interface AccessLogsQueryParams {
   to?: string;   // RFC3339 or YYYY-MM-DD
   page?: number;
   per_page?: number;
+}
+
+// ==========================================
+// 7. Worker Credential & Mobile Badge
+// ==========================================
+
+export interface WorkerCredentialDetail {
+  user_id: string;
+  full_name: string;
+  curp?: string | null;
+  imss_number?: string | null;
+  job_title?: string | null;
+  avatar_r2_key?: string | null;
+  is_active: boolean;
+}
+
+export interface ContractorCredentialDetail {
+  id: string;
+  name: string;
+  rfc?: string | null;
+  repse_number?: string | null;
+  status: string;
+}
+
+export interface PlantCredentialDetail {
+  id: string;
+  name: string;
+}
+
+export interface WorkerCredentialResponse {
+  worker: WorkerCredentialDetail;
+  contractor: ContractorCredentialDetail;
+  plant: PlantCredentialDetail;
+  qr_payload: string;
+  compliance_status: AccessResult;
+  denial_reasons?: string[];
+  warning_reasons?: string[];
+  documents: DocumentSnapshotItem[];
+  generated_at: string;
 }

@@ -44,6 +44,11 @@ func (m *MockUserRepository) UpdateLastLogin(ctx context.Context, id uuid.UUID, 
 	return args.Error(0)
 }
 
+func (m *MockUserRepository) UpdateThemePreference(ctx context.Context, id uuid.UUID, theme string) error {
+	args := m.Called(ctx, id, theme)
+	return args.Error(0)
+}
+
 const validSecret = "super_secret_jwt_key_min_32_characters_long_12345"
 
 func TestLoginUseCase(t *testing.T) {

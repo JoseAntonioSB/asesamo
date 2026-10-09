@@ -25,6 +25,8 @@ type Config struct {
 	JWTSecret          string
 	AppEnv             string
 	CORSAllowedOrigins []string
+	StoragePath        string
+	StorageDir         string
 }
 
 // LoadFromEnv loads configuration from environment variables and validates all required fields.
@@ -58,12 +60,22 @@ func LoadFromEnv() (*Config, error) {
 		corsOrigins = []string{"*"}
 	}
 
+	storageDir := os.Getenv("STORAGE_DIR")
+	if storageDir == "" {
+		storageDir = os.Getenv("STORAGE_PATH")
+	}
+	if storageDir == "" {
+		storageDir = "./uploads"
+	}
+
 	cfg := &Config{
 		DatabaseURL:        os.Getenv("DATABASE_URL"),
 		AppPort:            port,
 		JWTSecret:          os.Getenv("JWT_SECRET"),
 		AppEnv:             appEnv,
 		CORSAllowedOrigins: corsOrigins,
+		StoragePath:        storageDir,
+		StorageDir:         storageDir,
 	}
 
 	if err := cfg.Validate(); err != nil {

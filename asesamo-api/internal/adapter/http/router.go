@@ -20,8 +20,12 @@ type RouterConfig struct {
 	AuthHandler        *handler.AuthHandler
 	AccessPointHandler *handler.AccessPointHandler
 	AccessHandler      *handler.AccessHandler
+	DocumentHandler    *handler.DocumentHandler
+	UserHandler        *handler.UserHandler
+	WorkerHandler      *handler.WorkerHandler
 	JWTSecret          string
 	CORSOrigins        []string
+	LoginRateLimit     int
 }
 
 // NewRouter constructs and configures the HTTP request multiplexer.
@@ -35,15 +39,20 @@ func NewRouter(cfg RouterConfig) http.Handler {
 	r.Use(chimiddleware.Recoverer)
 	r.Use(customMiddleware.CORS(cfg.CORSOrigins))
 
-	// Public Health endpoints (at root and /api/v1)
+	// Public Health endpoints (at root, /healthz, and /api/v1)
 	r.Get("/health", cfg.HealthHandler.Check)
+	r.Get("/healthz", cfg.HealthHandler.Check)
 	r.Get("/api/v1/health", cfg.HealthHandler.Check)
 
 	// API v1 group
 	r.Route("/api/v1", func(r chi.Router) {
-		// Rate limiter on login: 10 requests per minute per IP
+		limit := cfg.LoginRateLimit
+		if limit <= 0 {
+			limit = 10
+		}
+		// Rate limiter on login: requests per minute per IP
 		loginLimiter := httprate.LimitBy(
-			10,
+			limit,
 			1*time.Minute,
 			httprate.KeyByIP,
 			httprate.WithLimitHandler(func(w http.ResponseWriter, r *http.Request) {
@@ -66,6 +75,27 @@ func NewRouter(cfg RouterConfig) http.Handler {
 				r.Post("/access/check-in", cfg.AccessHandler.CheckIn)
 				r.Post("/access/check-out", cfg.AccessHandler.CheckOut)
 				r.Get("/access-logs", cfg.AccessHandler.ListLogs)
+			}
+
+			// Document Management & EHS Review
+			if cfg.DocumentHandler != nil {
+				r.Post("/documents/upload", cfg.DocumentHandler.Upload)
+				r.Get("/documents/my-documents", cfg.DocumentHandler.ListMyDocuments)
+				r.Get("/documents/pending", cfg.DocumentHandler.ListPending)
+				r.Post("/documents/{id}/review", cfg.DocumentHandler.Review)
+				r.Get("/documents/{id}/download", cfg.DocumentHandler.Download)
+				r.Get("/documents/types", cfg.DocumentHandler.ListTypes)
+			}
+
+			// User Profile & Preferences
+			if cfg.UserHandler != nil {
+				r.Patch("/users/me/theme", cfg.UserHandler.UpdateTheme)
+			}
+
+			// Worker Credential & Mobile Badge
+			if cfg.WorkerHandler != nil {
+				r.Get("/workers/me/credential", cfg.WorkerHandler.GetMyCredential)
+				r.Get("/workers/{id}/credential", cfg.WorkerHandler.GetWorkerCredential)
 			}
 		})
 	})

@@ -52,11 +52,12 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	resp := dto.LoginResponseData{
 		Token: output.Token,
 		User: dto.UserProfileResponse{
-			ID:       output.User.ID,
-			TenantID: output.User.TenantID,
-			Email:    output.User.Email,
-			FullName: output.User.FullName,
-			Role:     string(output.User.Role),
+			ID:              output.User.ID,
+			TenantID:        output.User.TenantID,
+			Email:           output.User.Email,
+			FullName:        output.User.FullName,
+			Role:            string(output.User.Role),
+			ThemePreference: output.User.EffectiveTheme(),
 		},
 	}
 

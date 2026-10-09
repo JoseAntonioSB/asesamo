@@ -22,6 +22,7 @@ All tests interact via standard HTTP (opaque-box) using `curl` and `jq`. No inte
 ./test/e2e/test_runner.sh --tier 2   # Tier 2: Boundary & Corner Cases
 ./test/e2e/test_runner.sh --tier 3   # Tier 3: Cross-Feature Combinations
 ./test/e2e/test_runner.sh --tier 4   # Tier 4: Industrial Shift Workload
+./test/e2e/test_runner.sh --tier 5   # Tier 5: White-Box Adversarial Hardening
 ```
 
 ### Run Against Custom / Remote API Endpoint
@@ -40,6 +41,7 @@ API_BASE_URL="http://remote-host:8080" ./test/e2e/test_runner.sh
 ./test/e2e/tier2_boundary_test.sh
 ./test/e2e/tier3_combination_test.sh
 ./test/e2e/tier4_workload_test.sh
+./test/e2e/tier5_whitebox_adversarial_probe.sh
 ```
 
 ---
@@ -48,11 +50,12 @@ API_BASE_URL="http://remote-host:8080" ./test/e2e/test_runner.sh
 
 | Tier | Script Path | Description | Test Assertions | Primary Invariants Verified |
 |---|---|---|:---:|---|
-| **Tier 1** | `test/e2e/tier1_feature_test.sh` | Feature Coverage | **26** | Healthcheck, Guard Login (JWT, user envelope), Access Points Catalog, Check-in (Granted, Denied, Warning), Access Logs pagination. |
-| **Tier 2** | `test/e2e/tier2_boundary_test.sh` | Boundary & Corner Cases | **17** | Expired/tampered JWT, malformed UUIDs, SQLi/traversal resilience, nonexistent entities (404), document policy boundaries (`block_on_expired_docs`), cross-tenant isolation, extreme payload handling. |
-| **Tier 3** | `test/e2e/tier3_combination_test.sh` | Cross-Feature Combinations | **17** | End-to-end audit lifecycle (Login -> Check-in -> Verify immutable JSONB snapshot in DB), multi-worker differential audit ordering, check-in to check-out lifecycle, repeat badge scans, token rotation. |
-| **Tier 4** | `test/e2e/tier4_workload_test.sh` | Industrial Shift Workload | **9 + 15 trans.** | 15-worker morning shift arrival burst (compliant, non-compliant, warning, unregistered), latency benchmark (<=500ms), zero log drop, full shift audit reconciliation against database. |
-| **Total** | `test/e2e/test_runner.sh` | **Master Suite** | **69+ Assertions** | **100% Opaque-Box Coverage across Phase 1 MVP Scope** |
+| **Tier 1** | `test/e2e/tier1_feature_test.sh` | Feature Coverage | **34** | Healthcheck, Guard Login (JWT, user envelope), Access Points Catalog, Check-in (Granted, Denied, Warning), Access Logs pagination. |
+| **Tier 2** | `test/e2e/tier2_boundary_test.sh` | Boundary & Corner Cases | **19** | Expired/tampered JWT, malformed UUIDs, SQLi/traversal resilience, nonexistent entities (404), document policy boundaries (`block_on_expired_docs`), cross-tenant isolation, extreme payload handling. |
+| **Tier 3** | `test/e2e/tier3_combination_test.sh` | Cross-Feature Combinations | **25** | End-to-end audit lifecycle (Login -> Check-in -> Verify immutable JSONB snapshot in DB), multi-worker differential audit ordering, check-in to check-out lifecycle, repeat badge scans, token rotation. |
+| **Tier 4** | `test/e2e/tier4_workload_test.sh` | Industrial Shift Workload | **11** (+ 15 live shift workload transactions) | 15-worker morning shift arrival burst (compliant, non-compliant, warning, unregistered), latency benchmark (<=500ms), zero log drop, full shift audit reconciliation against database. |
+| **Tier 5** | `test/e2e/tier5_whitebox_adversarial_probe.sh` | White-Box Adversarial Coverage Hardening | **52** | SQL injection, nil UUIDs, path traversals, cross-tenant isolation, race conditions, live HTTP 429 rate limiting with Spanish error envelope. |
+| **Total** | `test/e2e/test_runner.sh` | **Master Suite** | **141 assertions (100% passing)** | **100% Opaque-Box & White-Box Adversarial Coverage across Phase 1 MVP Scope** |
 
 ---
 
