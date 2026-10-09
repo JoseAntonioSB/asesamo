@@ -121,6 +121,55 @@ INSERT INTO users (
   TRUE
 ) ON CONFLICT (id) DO NOTHING;
 
+-- Contractor Admin User (Deterministic UUID: 44444444-4444-4444-4444-444444444442)
+-- Manages company Mantenimiento Industrial del Norte SA de CV and its crew
+INSERT INTO users (
+  id,
+  tenant_id,
+  email,
+  password_hash,
+  full_name,
+  phone,
+  role,
+  is_active
+) VALUES (
+  '44444444-4444-4444-4444-444444444442',
+  '11111111-1111-1111-1111-111111111111',
+  'contratista@mantenimientonorte.com',
+  crypt('Password123!', gen_salt('bf', 10)),
+  'Ing. Fernando Garza (Admin Contratista)',
+  '4427778899',
+  'contractor_admin',
+  TRUE
+) ON CONFLICT (id) DO UPDATE SET
+  email = EXCLUDED.email,
+  role = EXCLUDED.role,
+  full_name = EXCLUDED.full_name;
+
+-- EHS Manager User (Deterministic UUID: 44444444-4444-4444-4444-444444444443)
+INSERT INTO users (
+  id,
+  tenant_id,
+  email,
+  password_hash,
+  full_name,
+  phone,
+  role,
+  is_active
+) VALUES (
+  '44444444-4444-4444-4444-444444444443',
+  '11111111-1111-1111-1111-111111111111',
+  'ehs@asesamo.com',
+  crypt('Password123!', gen_salt('bf', 10)),
+  'Ing. Laura Sanchez (EHS Manager)',
+  '4428887766',
+  'ehs_manager',
+  TRUE
+) ON CONFLICT (id) DO UPDATE SET
+  email = EXCLUDED.email,
+  role = EXCLUDED.role,
+  full_name = EXCLUDED.full_name;
+
 -- Worker 1 User (Deterministic UUID: 66666666-6666-6666-6666-666666666661)
 INSERT INTO users (
   id,
@@ -195,6 +244,7 @@ INSERT INTO contractors (
   rfc,
   repse_number,
   contractor_type,
+  admin_user_id,
   is_active
 ) VALUES (
   '55555555-5555-5555-5555-555555555555',
@@ -202,8 +252,10 @@ INSERT INTO contractors (
   'MIN120304AB1',
   'REPSE-NL-2023-8841',
   'company',
+  '44444444-4444-4444-4444-444444444442',
   TRUE
-) ON CONFLICT (id) DO NOTHING;
+) ON CONFLICT (id) DO UPDATE SET
+  admin_user_id = EXCLUDED.admin_user_id;
 
 -- ------------------------------------------------------------
 -- 6. PLANT ↔ CONTRACTOR RELATIONSHIP (ACTIVE)

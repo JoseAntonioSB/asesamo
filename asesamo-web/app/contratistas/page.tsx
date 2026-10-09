@@ -29,6 +29,7 @@ import {
   AlertTriangle,
   BadgeAlert,
   Briefcase,
+  BarChart3,
 } from 'lucide-react';
 
 const DEFAULT_PLANT_ID = '22222222-2222-2222-2222-222222222222'; // Planta Querétaro Norte
@@ -272,6 +273,20 @@ function ContratistasContent() {
                 <span className="hidden lg:inline">Mi Credencial</span>
               </Button>
             </Link>
+
+            {isPlantOrEhsAdmin && (
+              <Link href="/reportes">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="border-slate-700 text-indigo-300 hover:text-white hover:bg-slate-800 text-xs gap-1.5"
+                  title="Métricas y Reportes STPS"
+                >
+                  <BarChart3 className="w-3.5 h-3.5 text-indigo-400" />
+                  <span className="hidden sm:inline">Reportes</span>
+                </Button>
+              </Link>
+            )}
 
             {/* Theme Toggle */}
             <ThemeToggle />

@@ -39,8 +39,8 @@ function LoginForm() {
   }, [searchParams]);
 
   // Quick-fill demo credentials
-  const handleQuickFill = () => {
-    setEmail('guard@asesamo.com');
+  const handleQuickFill = (userEmail = 'guard@asesamo.com') => {
+    setEmail(userEmail);
     setPassword('Password123!');
     setErrorBanner(null);
   };
@@ -63,10 +63,33 @@ function LoginForm() {
 
     try {
       setIsSubmitting(true);
-      await login(email.trim(), password);
+      const res = await login(email.trim(), password);
 
-      const destination = searchParams.get('redirect') || '/caseta';
-      router.push(destination);
+      const redirectParam = searchParams.get('redirect');
+      if (redirectParam) {
+        router.push(redirectParam);
+      } else {
+        // Smart redirect based on authenticated user role
+        switch (res.user.role) {
+          case 'contractor_admin':
+            router.push('/contratistas');
+            break;
+          case 'ehs_manager':
+            router.push('/ehs/aprobaciones');
+            break;
+          case 'worker':
+            router.push('/credencial');
+            break;
+          case 'plant_admin':
+          case 'tenant_admin':
+            router.push('/documentos');
+            break;
+          case 'guard':
+          default:
+            router.push('/caseta');
+            break;
+        }
+      }
     } catch (err: unknown) {
       setIsSubmitting(false);
       if (err instanceof ApiError) {
@@ -75,7 +98,7 @@ function LoginForm() {
         } else if (err.code === 'TOO_MANY_REQUESTS') {
           setErrorBanner('Demasiados intentos fallidos. Espere un momento antes de volver a intentar.');
         } else if (err.code === 'USER_INACTIVE') {
-          setErrorBanner('Su cuenta de oficial de caseta se encuentra inactiva.');
+          setErrorBanner('Su cuenta se encuentra inactiva.');
         } else {
           setErrorBanner(err.message || 'Error al iniciar sesión.');
         }

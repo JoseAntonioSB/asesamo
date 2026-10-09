@@ -24,6 +24,7 @@ type RouterConfig struct {
 	UserHandler        *handler.UserHandler
 	WorkerHandler      *handler.WorkerHandler
 	ContractorHandler  *handler.ContractorHandler
+	ReportHandler      *handler.ReportHandler
 	JWTSecret          string
 	CORSOrigins        []string
 	LoginRateLimit     int
@@ -114,6 +115,16 @@ func NewRouter(cfg RouterConfig) http.Handler {
 					cr.Get("/workers", cfg.ContractorHandler.ListWorkers)
 					cr.With(customMiddleware.RequireRole("contractor_admin", "plant_admin", "ehs_manager", "tenant_admin")).Post("/workers", cfg.ContractorHandler.AddWorker)
 					cr.With(customMiddleware.RequireRole("contractor_admin", "plant_admin", "ehs_manager", "tenant_admin")).Patch("/workers/{id}/status", cfg.ContractorHandler.ToggleWorkerStatus)
+				})
+			}
+
+			// Metrics & STPS Audit Reports (Phase 2 Module 2)
+			if cfg.ReportHandler != nil {
+				r.Route("/reports", func(rr chi.Router) {
+					rr.Use(customMiddleware.RequireRole("plant_admin", "ehs_manager", "tenant_admin", "guard"))
+					rr.Get("/metrics", cfg.ReportHandler.GetMetrics)
+					rr.Get("/export/access-logs", cfg.ReportHandler.ExportAccessLogs)
+					rr.Get("/export/compliance", cfg.ReportHandler.ExportCompliance)
 				})
 			}
 		})

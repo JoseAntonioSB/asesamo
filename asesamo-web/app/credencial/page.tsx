@@ -24,6 +24,7 @@ import {
   ChevronRight,
   AlertCircle,
   Building2,
+  BarChart3,
 } from 'lucide-react';
 
 // Seed Presets for Instant Demo & Offline Reliability
@@ -306,6 +307,20 @@ function CredencialContent() {
                 >
                   <FileStack className="w-3.5 h-3.5 text-amber-400" />
                   <span className="hidden sm:inline">Bandeja EHS</span>
+                </Button>
+              </Link>
+            )}
+
+            {isGuardOrAdmin && (
+              <Link href="/reportes">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="border-slate-800 text-indigo-300 hover:text-white hover:bg-slate-800 text-xs gap-1.5"
+                  title="Métricas y Reportes STPS"
+                >
+                  <BarChart3 className="w-3.5 h-3.5 text-indigo-400" />
+                  <span className="hidden sm:inline">Reportes</span>
                 </Button>
               </Link>
             )}

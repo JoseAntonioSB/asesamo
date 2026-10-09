@@ -26,6 +26,8 @@ import {
   UpdateContractorStatusPayload,
   AddContractorWorkerPayload,
   ToggleWorkerStatusPayload,
+  ReportMetricsResponse,
+  ReportFilterParams,
 } from './types';
 import { getStoredToken, setStoredToken, setStoredUser, clearAuthSession } from '../auth';
 
@@ -504,6 +506,80 @@ export class ApiClient {
       }
     );
     return res.data;
+  }
+
+  /**
+   * GET /api/v1/reports/metrics
+   * Retrieves aggregated KPI analytics, daily timelines, and top rejection reasons.
+   */
+  public async getReportMetrics(params?: ReportFilterParams): Promise<ReportMetricsResponse> {
+    const query = new URLSearchParams();
+    if (params?.plant_id) query.append('plant_id', params.plant_id);
+    if (params?.from) query.append('from', params.from);
+    if (params?.to) query.append('to', params.to);
+
+    const qs = query.toString() ? `?${query.toString()}` : '';
+    const res = await this.request<ReportMetricsResponse>(`/reports/metrics${qs}`, {
+      method: 'GET',
+    });
+    return res.data;
+  }
+
+  /**
+   * Returns full URL for downloading access logs CSV.
+   */
+  public getExportAccessLogsUrl(params?: ReportFilterParams): string {
+    const query = new URLSearchParams();
+    if (params?.plant_id) query.append('plant_id', params.plant_id);
+    if (params?.from) query.append('from', params.from);
+    if (params?.to) query.append('to', params.to);
+
+    const qs = query.toString() ? `?${query.toString()}` : '';
+    return `${this.baseUrl}/reports/export/access-logs${qs}`;
+  }
+
+  /**
+   * Returns full URL for downloading worker compliance matrix CSV.
+   */
+  public getExportComplianceUrl(plantId?: string): string {
+    const qs = plantId ? `?plant_id=${encodeURIComponent(plantId)}` : '';
+    return `${this.baseUrl}/reports/export/compliance${qs}`;
+  }
+
+  /**
+   * Downloads access logs CSV via authenticated fetch.
+   */
+  public async downloadAccessLogsCSV(params?: ReportFilterParams): Promise<Blob> {
+    const url = this.getExportAccessLogsUrl(params);
+    const token = getStoredToken();
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(url, { headers });
+    if (!response.ok) {
+      throw new ApiError('EXPORT_ERROR', 'No se pudo generar el reporte de accesos en CSV.', response.status);
+    }
+    return response.blob();
+  }
+
+  /**
+   * Downloads compliance matrix CSV via authenticated fetch.
+   */
+  public async downloadComplianceCSV(plantId?: string): Promise<Blob> {
+    const url = this.getExportComplianceUrl(plantId);
+    const token = getStoredToken();
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(url, { headers });
+    if (!response.ok) {
+      throw new ApiError('EXPORT_ERROR', 'No se pudo generar la matriz de cumplimiento STPS.', response.status);
+    }
+    return response.blob();
   }
 
   /**

@@ -78,7 +78,7 @@ EXPOSE 3000
 
 # Healthcheck probe matching docker-compose expectations
 HEALTHCHECK --interval=5s --timeout=5s --start-period=15s --retries=5 \
-  CMD curl -f http://localhost:3000 || exit 1
+  CMD curl -f http://127.0.0.1:3000 || exit 1
 
 # Launch Next.js standalone Node.js server
 CMD ["node", "server.js"]

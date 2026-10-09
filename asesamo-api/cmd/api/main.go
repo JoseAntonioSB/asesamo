@@ -20,6 +20,7 @@ import (
 	"asesamo-api/internal/core/usecase/auth"
 	"asesamo-api/internal/core/usecase/contractor"
 	"asesamo-api/internal/core/usecase/document"
+	"asesamo-api/internal/core/usecase/report"
 	"asesamo-api/internal/core/usecase/user"
 	"asesamo-api/internal/core/usecase/worker"
 	"asesamo-api/internal/infra/config"
@@ -58,6 +59,7 @@ func main() {
 	complianceRepo := postgres.NewComplianceRepository(db.DB)
 	docRepo := postgres.NewDocumentRepository(db.DB)
 	contractorRepo := postgres.NewContractorRepository(db.DB)
+	reportRepo := postgres.NewReportRepository(db.DB)
 
 	storageService, err := storage.NewLocalStorageService(cfg.StorageDir)
 	if err != nil {
@@ -89,6 +91,11 @@ func main() {
 	addWorkerUseCase := contractor.NewAddContractorWorkerUseCase(contractorRepo, userRepo)
 	toggleWorkerStatusUseCase := contractor.NewToggleContractorWorkerStatusUseCase(contractorRepo)
 
+	// Report Use Cases (Phase 2 Module 2)
+	getMetricsUseCase := report.NewGetReportMetricsUseCase(reportRepo)
+	exportAccessLogsUseCase := report.NewExportAccessLogsCSVUseCase(reportRepo)
+	exportComplianceUseCase := report.NewExportComplianceCSVUseCase(reportRepo)
+
 	// Handlers (inbound adapters)
 	healthHandler := handler.NewHealthHandler(db, "1.0.0")
 	authHandler := handler.NewAuthHandler(loginUseCase)
@@ -107,6 +114,7 @@ func main() {
 		addWorkerUseCase,
 		toggleWorkerStatusUseCase,
 	)
+	reportHandler := handler.NewReportHandler(getMetricsUseCase, exportAccessLogsUseCase, exportComplianceUseCase)
 
 	loginLimit := 100
 	if cfg.AppEnv == config.EnvProduction {
@@ -123,6 +131,7 @@ func main() {
 		UserHandler:        userHandler,
 		WorkerHandler:      workerHandler,
 		ContractorHandler:  contractorHandler,
+		ReportHandler:      reportHandler,
 		JWTSecret:          cfg.JWTSecret,
 		CORSOrigins:        cfg.CORSAllowedOrigins,
 		LoginRateLimit:     loginLimit,

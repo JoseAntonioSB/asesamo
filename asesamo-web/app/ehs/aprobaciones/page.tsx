@@ -30,6 +30,7 @@ import {
   Printer,
   QrCode,
   Building2,
+  BarChart3,
 } from 'lucide-react';
 
 type FilterTab = 'pending_review' | 'all' | 'approved' | 'rejected';
@@ -275,6 +276,18 @@ function EHSApprovalTrayContent() {
               >
                 <QrCode className="w-3.5 h-3.5 text-cyan-400" />
                 <span className="hidden sm:inline">Credencial</span>
+              </Button>
+            </Link>
+
+            <Link href="/reportes">
+              <Button
+                size="sm"
+                variant="outline"
+                className="border-slate-800 text-indigo-300 hover:text-white hover:bg-slate-800 text-xs gap-1.5"
+                title="Métricas y Reportes STPS"
+              >
+                <BarChart3 className="w-3.5 h-3.5 text-indigo-400" />
+                <span className="hidden sm:inline">Reportes</span>
               </Button>
             </Link>
 

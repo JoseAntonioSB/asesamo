@@ -330,3 +330,53 @@ export interface ToggleWorkerStatusPayload {
   is_active: boolean;
 }
 
+// ==========================================
+// 9. Metrics & STPS Audit Reports
+// ==========================================
+
+export interface AccessMetricsSummary {
+  total_accesses: number;
+  granted_count: number;
+  warning_count: number;
+  denied_count: number;
+  compliance_rate: number;
+  avg_duration_minutes: number;
+}
+
+export interface DailyAccessDistribution {
+  date: string;
+  total: number;
+  granted: number;
+  denied: number;
+}
+
+export interface RejectionReasonSummary {
+  reason: string;
+  count: number;
+  percentage: number;
+}
+
+export interface ContractorComplianceSummary {
+  contractor_id: string;
+  contractor_name: string;
+  total_attempts: number;
+  granted_count: number;
+  denied_count: number;
+  compliance_rate: number;
+}
+
+export interface ReportMetricsResponse {
+  summary: AccessMetricsSummary;
+  timeline: DailyAccessDistribution[];
+  rejection_reasons: RejectionReasonSummary[];
+  contractor_ranking: ContractorComplianceSummary[];
+  generated_at: string;
+}
+
+export interface ReportFilterParams {
+  plant_id?: string;
+  from?: string;
+  to?: string;
+}
+
+
