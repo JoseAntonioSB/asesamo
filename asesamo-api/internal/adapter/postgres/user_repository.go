@@ -109,3 +109,43 @@ func (r *userRepository) UpdateThemePreference(ctx context.Context, id uuid.UUID
 	return nil
 }
 
+func (r *userRepository) UpdateProfile(ctx context.Context, id uuid.UUID, fullName string, phone *string) error {
+	query := `UPDATE users SET full_name = $1, phone = $2, updated_at = now() WHERE id = $3 AND deleted_at IS NULL`
+	result, err := r.db.ExecContext(ctx, query, fullName, phone, id)
+	if err != nil {
+		return fmt.Errorf("postgres/user: failed to update profile: %w", err)
+	}
+	rowsAffected, err := result.RowsAffected()
+	if err == nil && rowsAffected == 0 {
+		return domainErrors.ErrUserNotFound
+	}
+	return nil
+}
+
+func (r *userRepository) UpdateAvatar(ctx context.Context, id uuid.UUID, avatarKey string) error {
+	query := `UPDATE users SET avatar_r2_key = $1, updated_at = now() WHERE id = $2 AND deleted_at IS NULL`
+	result, err := r.db.ExecContext(ctx, query, avatarKey, id)
+	if err != nil {
+		return fmt.Errorf("postgres/user: failed to update avatar: %w", err)
+	}
+	rowsAffected, err := result.RowsAffected()
+	if err == nil && rowsAffected == 0 {
+		return domainErrors.ErrUserNotFound
+	}
+	return nil
+}
+
+func (r *userRepository) UpdatePassword(ctx context.Context, id uuid.UUID, passwordHash string) error {
+	query := `UPDATE users SET password_hash = $1, updated_at = now() WHERE id = $2 AND deleted_at IS NULL`
+	result, err := r.db.ExecContext(ctx, query, passwordHash, id)
+	if err != nil {
+		return fmt.Errorf("postgres/user: failed to update password: %w", err)
+	}
+	rowsAffected, err := result.RowsAffected()
+	if err == nil && rowsAffected == 0 {
+		return domainErrors.ErrUserNotFound
+	}
+	return nil
+}
+
+

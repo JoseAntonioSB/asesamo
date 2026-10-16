@@ -52,6 +52,21 @@ func (m *MockUserRepoForHandler) UpdateThemePreference(ctx context.Context, id u
 	return args.Error(0)
 }
 
+func (m *MockUserRepoForHandler) UpdateProfile(ctx context.Context, id uuid.UUID, fullName string, phone *string) error {
+	args := m.Called(ctx, id, fullName, phone)
+	return args.Error(0)
+}
+
+func (m *MockUserRepoForHandler) UpdateAvatar(ctx context.Context, id uuid.UUID, avatarKey string) error {
+	args := m.Called(ctx, id, avatarKey)
+	return args.Error(0)
+}
+
+func (m *MockUserRepoForHandler) UpdatePassword(ctx context.Context, id uuid.UUID, passwordHash string) error {
+	args := m.Called(ctx, id, passwordHash)
+	return args.Error(0)
+}
+
 const testJWTSecret = "super_secret_jwt_key_min_32_characters_long_12345"
 
 func TestAuthHandler_Login(t *testing.T) {

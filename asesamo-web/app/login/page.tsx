@@ -9,26 +9,27 @@ import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
 import { ApiError } from '@/lib/api/client';
+import { getDefaultHomeForRole } from '@/lib/auth';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { ShieldCheck, AlertTriangle, KeyRound, UserCheck, Loader2 } from 'lucide-react';
 
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { login, isAuthenticated } = useAuth();
+  const { login, isAuthenticated, user } = useAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errorBanner, setErrorBanner] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // If already authenticated, redirect immediately to /caseta
+  // If already authenticated, redirect immediately to role home
   useEffect(() => {
     if (isAuthenticated) {
-      const redirect = searchParams.get('redirect') || '/caseta';
+      const redirect = searchParams.get('redirect') || getDefaultHomeForRole(user?.role);
       router.replace(redirect);
     }
-  }, [isAuthenticated, router, searchParams]);
+  }, [isAuthenticated, user, router, searchParams]);
 
   // Handle URL error param (e.g. session expired)
   useEffect(() => {
@@ -66,30 +67,8 @@ function LoginForm() {
       const res = await login(email.trim(), password);
 
       const redirectParam = searchParams.get('redirect');
-      if (redirectParam) {
-        router.push(redirectParam);
-      } else {
-        // Smart redirect based on authenticated user role
-        switch (res.user.role) {
-          case 'contractor_admin':
-            router.push('/contratistas');
-            break;
-          case 'ehs_manager':
-            router.push('/ehs/aprobaciones');
-            break;
-          case 'worker':
-            router.push('/credencial');
-            break;
-          case 'plant_admin':
-          case 'tenant_admin':
-            router.push('/documentos');
-            break;
-          case 'guard':
-          default:
-            router.push('/caseta');
-            break;
-        }
-      }
+      const targetHome = redirectParam || getDefaultHomeForRole(res.user.role);
+      router.push(targetHome);
     } catch (err: unknown) {
       setIsSubmitting(false);
       if (err instanceof ApiError) {
@@ -218,31 +197,70 @@ function LoginForm() {
             <div className="flex items-center justify-between">
               <span className="text-xs text-slate-400 font-medium flex items-center gap-1.5">
                 <UserCheck className="w-3.5 h-3.5 text-emerald-400" />
-                Credenciales de demostración:
+                Cuentas de demostración (Click para autollenar):
               </span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
-                onClick={handleQuickFill}
+                onClick={() => handleQuickFill('guard@asesamo.com')}
                 disabled={isSubmitting}
-                className="text-xs text-emerald-400 hover:text-emerald-300 font-medium underline underline-offset-4 transition-colors cursor-pointer"
+                className={`p-2 rounded-lg border text-left transition-colors text-xs font-mono ${
+                  email === 'guard@asesamo.com'
+                    ? 'border-emerald-500 bg-emerald-950/40 text-emerald-300'
+                    : 'border-slate-800 bg-slate-950/80 hover:border-slate-700 text-slate-300'
+                }`}
               >
-                Autocompletar
+                <div className="font-semibold text-[11px] text-emerald-400">👮 Guardia / Caseta</div>
+                <div className="truncate text-slate-400 text-[10px]">guard@asesamo.com</div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleQuickFill('contratista@mantenimientonorte.com')}
+                disabled={isSubmitting}
+                className={`p-2 rounded-lg border text-left transition-colors text-xs font-mono ${
+                  email === 'contratista@mantenimientonorte.com'
+                    ? 'border-emerald-500 bg-emerald-950/40 text-emerald-300'
+                    : 'border-slate-800 bg-slate-950/80 hover:border-slate-700 text-slate-300'
+                }`}
+              >
+                <div className="font-semibold text-[11px] text-amber-400">🏢 Admin Contratista</div>
+                <div className="truncate text-slate-400 text-[10px]">contratista@mantenimiento...</div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleQuickFill('ehs@asesamo.com')}
+                disabled={isSubmitting}
+                className={`p-2 rounded-lg border text-left transition-colors text-xs font-mono ${
+                  email === 'ehs@asesamo.com'
+                    ? 'border-emerald-500 bg-emerald-950/40 text-emerald-300'
+                    : 'border-slate-800 bg-slate-950/80 hover:border-slate-700 text-slate-300'
+                }`}
+              >
+                <div className="font-semibold text-[11px] text-blue-400">🛡️ EHS Manager</div>
+                <div className="truncate text-slate-400 text-[10px]">ehs@asesamo.com</div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleQuickFill('admin@asesamo.com')}
+                disabled={isSubmitting}
+                className={`p-2 rounded-lg border text-left transition-colors text-xs font-mono ${
+                  email === 'admin@asesamo.com'
+                    ? 'border-emerald-500 bg-emerald-950/40 text-emerald-300'
+                    : 'border-slate-800 bg-slate-950/80 hover:border-slate-700 text-slate-300'
+                }`}
+              >
+                <div className="font-semibold text-[11px] text-purple-400">⚙️ Admin Planta</div>
+                <div className="truncate text-slate-400 text-[10px]">admin@asesamo.com</div>
               </button>
             </div>
 
-            <div className="bg-slate-950/80 border border-slate-800 rounded-lg p-2.5 text-xs font-mono text-slate-400 space-y-1">
-              <div className="flex justify-between">
-                <span className="text-slate-500">Usuario:</span>
-                <span className="text-slate-200">guard@asesamo.com</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500">Contraseña:</span>
-                <span className="text-slate-200">Password123!</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500">Rol:</span>
-                <span className="text-emerald-400">Oficial de Caseta</span>
-              </div>
+            <div className="text-center text-[11px] text-slate-500 font-mono">
+              Contraseña única: <span className="text-slate-300 font-semibold">Password123!</span>
             </div>
           </div>
         </div>

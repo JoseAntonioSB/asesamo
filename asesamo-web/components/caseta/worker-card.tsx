@@ -54,11 +54,19 @@ export function WorkerCard({ worker, contractor, plant, result = 'granted' }: Wo
         {/* Worker Avatar / Photo placeholder */}
         <div className="relative">
           <div
-            className={`flex h-20 w-20 md:h-24 md:w-24 shrink-0 items-center justify-center rounded-2xl border-4 ${ringColor} bg-slate-800 text-2xl md:text-3xl font-black text-slate-100 shadow-xl`}
+            className={`relative overflow-hidden flex h-20 w-20 md:h-24 md:w-24 shrink-0 items-center justify-center rounded-2xl border-4 ${ringColor} bg-slate-800 text-2xl md:text-3xl font-black text-slate-100 shadow-xl`}
           >
-            {initials}
+            <img
+              src={`/api/v1/users/${worker.user_id}/avatar`}
+              alt={worker.full_name}
+              className="w-full h-full object-cover absolute inset-0"
+              onError={(e) => {
+                (e.target as HTMLElement).style.display = 'none';
+              }}
+            />
+            <span>{initials}</span>
           </div>
-          <div className="absolute -bottom-2 -right-2 rounded-full border-2 border-slate-900 bg-emerald-600 px-2 py-0.5 text-[10px] font-bold text-white uppercase tracking-wider">
+          <div className="absolute -bottom-2 -right-2 rounded-full border-2 border-slate-900 bg-emerald-600 px-2 py-0.5 text-[10px] font-bold text-white uppercase tracking-wider z-10">
             Activo
           </div>
         </div>
@@ -95,7 +103,7 @@ export function WorkerCard({ worker, contractor, plant, result = 'granted' }: Wo
             <span className="font-semibold uppercase tracking-wider">CURP</span>
             <button
               onClick={() => copyToClipboard(worker.curp || '', 'curp')}
-              className="h-8 w-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 active:scale-95 transition-all cursor-pointer"
+              className="h-8 w-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 active:scale-[0.97] transition-[transform,background-color,color] duration-150 ease-out cursor-pointer"
               title="Copiar CURP al portapapeles"
             >
               {copiedField === 'curp' ? (
@@ -116,7 +124,7 @@ export function WorkerCard({ worker, contractor, plant, result = 'granted' }: Wo
             <span className="font-semibold uppercase tracking-wider">NSS (IMSS)</span>
             <button
               onClick={() => copyToClipboard(worker.imss_number || '', 'imss')}
-              className="h-8 w-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 active:scale-95 transition-all cursor-pointer"
+              className="h-8 w-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 active:scale-[0.97] transition-[transform,background-color,color] duration-150 ease-out cursor-pointer"
               title="Copiar NSS al portapapeles"
             >
               {copiedField === 'imss' ? (
@@ -159,7 +167,7 @@ export function WorkerCard({ worker, contractor, plant, result = 'granted' }: Wo
         <span className="truncate font-mono">UUID: {worker.user_id}</span>
         <button
           onClick={() => copyToClipboard(worker.user_id, 'uuid')}
-          className="ml-2 inline-flex items-center gap-1 font-semibold text-emerald-400 hover:text-emerald-300 active:scale-95 transition-all cursor-pointer py-1 px-2 rounded hover:bg-slate-800"
+          className="ml-2 inline-flex items-center gap-1 font-semibold text-emerald-400 hover:text-emerald-300 active:scale-[0.97] transition-[transform,background-color,color] duration-150 ease-out cursor-pointer py-1 px-2 rounded hover:bg-slate-800"
         >
           {copiedField === 'uuid' ? 'Copiado' : 'Copiar'}
         </button>

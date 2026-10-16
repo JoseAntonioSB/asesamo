@@ -122,7 +122,7 @@ export function RejectDialog({
                     key={preset}
                     type="button"
                     onClick={() => handleSelectPreset(preset)}
-                    className={`text-[11px] px-2.5 py-1 rounded-md transition-all text-left flex items-center gap-1 border ${
+                    className={`text-[11px] px-2.5 py-1 rounded-md transition-[background-color,border-color,color,transform] duration-150 ease-out active:scale-[0.97] text-left flex items-center gap-1 border ${
                       isSelected
                         ? 'bg-rose-950/70 border-rose-600 text-rose-200 font-medium'
                         : 'bg-slate-950 hover:bg-slate-800/80 border-slate-800 text-slate-400 hover:text-slate-200'

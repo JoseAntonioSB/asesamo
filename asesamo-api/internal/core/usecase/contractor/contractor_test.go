@@ -187,6 +187,18 @@ func (m *mockUserRepo) UpdateThemePreference(ctx context.Context, id uuid.UUID, 
 	return nil
 }
 
+func (m *mockUserRepo) UpdateProfile(ctx context.Context, id uuid.UUID, fullName string, phone *string) error {
+	return nil
+}
+
+func (m *mockUserRepo) UpdateAvatar(ctx context.Context, id uuid.UUID, avatarKey string) error {
+	return nil
+}
+
+func (m *mockUserRepo) UpdatePassword(ctx context.Context, id uuid.UUID, passwordHash string) error {
+	return nil
+}
+
 // Mock PlantRepository
 type mockPlantRepo struct {
 	plants map[uuid.UUID]*entity.Plant

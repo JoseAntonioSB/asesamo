@@ -32,7 +32,7 @@ export function StatusBanner({
       <div
         role="alert"
         aria-live="polite"
-        className="w-full rounded-2xl border-2 border-blue-500/80 bg-gradient-to-r from-blue-950/90 via-slate-900 to-blue-950/90 p-6 md:p-8 text-white shadow-2xl shadow-blue-950/50 transition-all duration-300"
+        className="w-full rounded-2xl border-2 border-blue-500/80 bg-gradient-to-r from-blue-950/90 via-slate-900 to-blue-950/90 p-6 md:p-8 text-white shadow-2xl shadow-blue-950/50 transition-[transform,opacity,border-color,box-shadow] duration-150 ease-out animate-in fade-in-50 zoom-in-95"
       >
         <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5 text-center sm:text-left">
           <div className="flex h-16 w-16 md:h-20 md:w-20 shrink-0 items-center justify-center rounded-2xl bg-blue-500/20 text-blue-400 border border-blue-500/40">
@@ -59,7 +59,7 @@ export function StatusBanner({
       <div
         role="alert"
         aria-live="assertive"
-        className="w-full rounded-2xl border-2 border-emerald-500 bg-gradient-to-r from-emerald-950/90 via-slate-950 to-emerald-950/90 p-6 md:p-8 text-white shadow-2xl shadow-emerald-950/60 transition-all duration-300"
+        className="w-full rounded-2xl border-2 border-emerald-500 bg-gradient-to-r from-emerald-950/90 via-slate-950 to-emerald-950/90 p-6 md:p-8 text-white shadow-2xl shadow-emerald-950/60 transition-[transform,opacity,border-color,box-shadow] duration-150 ease-out animate-in fade-in-50 zoom-in-95"
       >
         <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5 text-center sm:text-left">
           <div className="flex h-16 w-16 md:h-20 md:w-20 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shadow-inner shadow-emerald-500/20">
@@ -96,7 +96,7 @@ export function StatusBanner({
       <div
         role="alert"
         aria-live="assertive"
-        className="w-full rounded-2xl border-2 border-amber-500 bg-gradient-to-r from-amber-950/90 via-slate-950 to-amber-950/90 p-6 md:p-8 text-white shadow-2xl shadow-amber-950/60 transition-all duration-300"
+        className="w-full rounded-2xl border-2 border-amber-500 bg-gradient-to-r from-amber-950/90 via-slate-950 to-amber-950/90 p-6 md:p-8 text-white shadow-2xl shadow-amber-950/60 transition-[transform,opacity,border-color,box-shadow] duration-150 ease-out animate-in fade-in-50 zoom-in-95"
       >
         <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5 text-center sm:text-left">
           <div className="flex h-16 w-16 md:h-20 md:w-20 shrink-0 items-center justify-center rounded-2xl bg-amber-500/20 text-amber-400 border border-amber-500/40 shadow-inner shadow-amber-500/20">
@@ -133,7 +133,7 @@ export function StatusBanner({
     <div
       role="alert"
       aria-live="assertive"
-      className="w-full rounded-2xl border-2 border-red-500 bg-gradient-to-r from-red-950/95 via-slate-950 to-red-950/95 p-6 md:p-8 text-white shadow-2xl shadow-red-950/70 transition-all duration-300"
+      className="w-full rounded-2xl border-2 border-red-500 bg-gradient-to-r from-red-950/95 via-slate-950 to-red-950/95 p-6 md:p-8 text-white shadow-2xl shadow-red-950/70 transition-[transform,opacity,border-color,box-shadow] duration-150 ease-out animate-in fade-in-50 zoom-in-95"
     >
       <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5 text-center sm:text-left">
         <div className="flex h-16 w-16 md:h-20 md:w-20 shrink-0 items-center justify-center rounded-2xl bg-red-500/20 text-red-400 border border-red-500/40 shadow-inner shadow-red-500/20">

@@ -49,6 +49,21 @@ func (m *MockUserRepository) UpdateThemePreference(ctx context.Context, id uuid.
 	return args.Error(0)
 }
 
+func (m *MockUserRepository) UpdateProfile(ctx context.Context, id uuid.UUID, fullName string, phone *string) error {
+	args := m.Called(ctx, id, fullName, phone)
+	return args.Error(0)
+}
+
+func (m *MockUserRepository) UpdateAvatar(ctx context.Context, id uuid.UUID, avatarKey string) error {
+	args := m.Called(ctx, id, avatarKey)
+	return args.Error(0)
+}
+
+func (m *MockUserRepository) UpdatePassword(ctx context.Context, id uuid.UUID, passwordHash string) error {
+	args := m.Called(ctx, id, passwordHash)
+	return args.Error(0)
+}
+
 const validSecret = "super_secret_jwt_key_min_32_characters_long_12345"
 
 func TestLoginUseCase(t *testing.T) {

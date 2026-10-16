@@ -20,14 +20,14 @@ export function ThemeToggle({ className = '', showLabel = false }: ThemeTogglePr
     <button
       type="button"
       onClick={toggleTheme}
-      className={`inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-slate-700/70 bg-slate-800/50 dark:border-slate-800 dark:bg-slate-900 text-slate-300 hover:text-white dark:hover:text-amber-300 active:scale-95 transition-all cursor-pointer no-print ${className}`}
+      className={`inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-slate-700/70 bg-slate-800/50 dark:border-slate-800 dark:bg-slate-900 text-slate-300 hover:text-white dark:hover:text-amber-300 active:scale-[0.97] transition-[transform,background-color,border-color,color] duration-160 ease-out cursor-pointer no-print ${className}`}
       title={tooltip}
       aria-label={tooltip}
     >
       {isDark ? (
-        <Sun className="w-4 h-4 text-amber-400" />
+        <Sun className="w-4 h-4 text-amber-400 transition-transform duration-200 ease-out rotate-0 scale-100" />
       ) : (
-        <Moon className="w-4 h-4 text-indigo-600 dark:text-slate-300" />
+        <Moon className="w-4 h-4 text-indigo-600 dark:text-slate-300 transition-transform duration-200 ease-out rotate-0 scale-100" />
       )}
       {showLabel && (
         <span className="text-xs font-semibold select-none">

@@ -15,5 +15,8 @@ type UserRepository interface {
 	GetByEmail(ctx context.Context, email string) (*entity.User, error)
 	UpdateLastLogin(ctx context.Context, id uuid.UUID, lastLoginAt time.Time) error
 	UpdateThemePreference(ctx context.Context, id uuid.UUID, theme string) error
+	UpdateProfile(ctx context.Context, id uuid.UUID, fullName string, phone *string) error
+	UpdateAvatar(ctx context.Context, id uuid.UUID, avatarKey string) error
+	UpdatePassword(ctx context.Context, id uuid.UUID, passwordHash string) error
 }
 

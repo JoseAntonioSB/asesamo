@@ -350,6 +350,20 @@ func (r *contractorRepository) AddWorker(ctx context.Context, workerUser *entity
 	workerUser.CreatedAt = now
 	workerUser.UpdatedAt = now
 
+	// Ensure workerUser has a valid tenant_id from plant_contractors or active tenant
+	if workerUser.TenantID == nil {
+		var resolvedTenant uuid.UUID
+		err := tx.QueryRowContext(ctx, `SELECT tenant_id FROM plant_contractors WHERE contractor_id = $1 LIMIT 1`, cw.ContractorID).Scan(&resolvedTenant)
+		if err == nil && resolvedTenant != uuid.Nil {
+			workerUser.TenantID = &resolvedTenant
+		} else {
+			_ = tx.QueryRowContext(ctx, `SELECT id FROM tenants WHERE is_active = true LIMIT 1`).Scan(&resolvedTenant)
+			if resolvedTenant != uuid.Nil {
+				workerUser.TenantID = &resolvedTenant
+			}
+		}
+	}
+
 	// 1. Insert into users
 	userQuery := `
 		INSERT INTO users (
@@ -455,6 +469,15 @@ func (r *contractorRepository) CreateUserWithPassword(ctx context.Context, user 
 	user.CreatedAt = now
 	user.UpdatedAt = now
 	user.PasswordHash = passwordHash
+
+	// Fallback to active tenant if user.TenantID is nil
+	if user.TenantID == nil {
+		var defaultTenant uuid.UUID
+		err := r.db.QueryRowContext(ctx, `SELECT id FROM tenants WHERE is_active = true LIMIT 1`).Scan(&defaultTenant)
+		if err == nil && defaultTenant != uuid.Nil {
+			user.TenantID = &defaultTenant
+		}
+	}
 
 	_, err := r.db.ExecContext(ctx, query,
 		user.ID,

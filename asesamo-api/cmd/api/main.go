@@ -16,10 +16,12 @@ import (
 	"asesamo-api/internal/adapter/http/handler"
 	"asesamo-api/internal/adapter/postgres"
 	"asesamo-api/internal/adapter/storage"
+	"asesamo-api/internal/core/domain/service"
 	"asesamo-api/internal/core/usecase/access"
 	"asesamo-api/internal/core/usecase/auth"
 	"asesamo-api/internal/core/usecase/contractor"
 	"asesamo-api/internal/core/usecase/document"
+	"asesamo-api/internal/core/usecase/permit"
 	"asesamo-api/internal/core/usecase/report"
 	"asesamo-api/internal/core/usecase/user"
 	"asesamo-api/internal/core/usecase/worker"
@@ -60,6 +62,9 @@ func main() {
 	docRepo := postgres.NewDocumentRepository(db.DB)
 	contractorRepo := postgres.NewContractorRepository(db.DB)
 	reportRepo := postgres.NewReportRepository(db.DB)
+	permitRepo := postgres.NewWorkPermitRepository(db.DB)
+
+	complianceEngine := service.NewComplianceEngine(complianceRepo)
 
 	storageService, err := storage.NewLocalStorageService(cfg.StorageDir)
 	if err != nil {
@@ -80,6 +85,10 @@ func main() {
 	reviewDocUseCase := document.NewReviewDocumentUseCase(docRepo)
 	listPendingDocsUseCase := document.NewListPendingDocumentsUseCase(docRepo)
 	updateThemeUseCase := user.NewUpdateThemeUseCase(userRepo)
+	getProfileUseCase := user.NewGetProfileUseCase(userRepo, contractorRepo)
+	updateProfileUseCase := user.NewUpdateProfileUseCase(userRepo)
+	uploadAvatarUseCase := user.NewUploadAvatarUseCase(userRepo, storageService)
+	getAvatarUseCase := user.NewGetAvatarUseCase(userRepo, storageService)
 	getCredentialUseCase := worker.NewGetCredentialUseCase(userRepo, plantRepo, complianceRepo)
 
 	// Contractor Use Cases
@@ -96,6 +105,15 @@ func main() {
 	exportAccessLogsUseCase := report.NewExportAccessLogsCSVUseCase(reportRepo)
 	exportComplianceUseCase := report.NewExportComplianceCSVUseCase(reportRepo)
 
+	// PTAR Digital Use Cases (Milestone 2)
+	createPermitUseCase := permit.NewCreatePermitUseCase(permitRepo)
+	listPermitsUseCase := permit.NewListPermitsUseCase(permitRepo, contractorRepo)
+	getPermitUseCase := permit.NewGetPermitUseCase(permitRepo, contractorRepo)
+	assignWorkersUseCase := permit.NewAssignWorkersUseCase(permitRepo, complianceEngine)
+	updateChecklistUseCase := permit.NewUpdateChecklistUseCase(permitRepo)
+	approvePermitUseCase := permit.NewApprovePermitUseCase(permitRepo, complianceEngine)
+	transitionStatusUseCase := permit.NewTransitionStatusUseCase(permitRepo)
+
 	// Handlers (inbound adapters)
 	healthHandler := handler.NewHealthHandler(db, "1.0.0")
 	authHandler := handler.NewAuthHandler(loginUseCase)
@@ -103,7 +121,13 @@ func main() {
 	accessHandler := handler.NewAccessHandler(checkInUseCase, checkOutUseCase, listAccessLogsUseCase)
 	docHandler := handler.NewDocumentHandler(uploadDocUseCase, listMyDocsUseCase, downloadDocUseCase, listDocTypesUseCase)
 	docHandler.SetReviewUseCases(reviewDocUseCase, listPendingDocsUseCase)
-	userHandler := handler.NewUserHandler(updateThemeUseCase)
+	userHandler := handler.NewUserHandler(
+		getProfileUseCase,
+		updateProfileUseCase,
+		uploadAvatarUseCase,
+		getAvatarUseCase,
+		updateThemeUseCase,
+	)
 	workerHandler := handler.NewWorkerHandler(getCredentialUseCase)
 	contractorHandler := handler.NewContractorHandler(
 		inviteContractorUseCase,
@@ -115,6 +139,15 @@ func main() {
 		toggleWorkerStatusUseCase,
 	)
 	reportHandler := handler.NewReportHandler(getMetricsUseCase, exportAccessLogsUseCase, exportComplianceUseCase)
+	permitHandler := handler.NewPermitHandler(
+		createPermitUseCase,
+		listPermitsUseCase,
+		getPermitUseCase,
+		assignWorkersUseCase,
+		updateChecklistUseCase,
+		approvePermitUseCase,
+		transitionStatusUseCase,
+	)
 
 	loginLimit := 100
 	if cfg.AppEnv == config.EnvProduction {
@@ -132,6 +165,7 @@ func main() {
 		WorkerHandler:      workerHandler,
 		ContractorHandler:  contractorHandler,
 		ReportHandler:      reportHandler,
+		PermitHandler:      permitHandler,
 		JWTSecret:          cfg.JWTSecret,
 		CORSOrigins:        cfg.CORSAllowedOrigins,
 		LoginRateLimit:     loginLimit,

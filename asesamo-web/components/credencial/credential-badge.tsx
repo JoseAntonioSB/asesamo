@@ -101,15 +101,25 @@ export function CredentialBadge({ data, className = '' }: CredentialBadgeProps) 
       <div className="flex items-start gap-4 mb-5">
         {/* Worker Avatar with Industrial Hard Hat Indicator */}
         <div className="relative shrink-0">
-          <div className="w-16 h-16 sm:w-18 sm:h-18 rounded-2xl bg-gradient-to-tr from-slate-800 to-slate-700 border-2 border-emerald-500/60 text-white flex items-center justify-center font-black text-xl shadow-lg">
-            {worker.full_name
-              .split(' ')
-              .map((n) => n[0])
-              .slice(0, 2)
-              .join('')
-              .toUpperCase()}
+          <div className="w-16 h-16 sm:w-18 sm:h-18 rounded-2xl bg-gradient-to-tr from-slate-800 to-slate-700 border-2 border-emerald-500/60 text-white flex items-center justify-center font-black text-xl shadow-lg overflow-hidden relative">
+            <img
+              src={`/api/v1/users/${worker.user_id}/avatar`}
+              alt={worker.full_name}
+              className="w-full h-full object-cover absolute inset-0"
+              onError={(e) => {
+                (e.target as HTMLElement).style.display = 'none';
+              }}
+            />
+            <span>
+              {worker.full_name
+                .split(' ')
+                .map((n) => n[0])
+                .slice(0, 2)
+                .join('')
+                .toUpperCase()}
+            </span>
           </div>
-          <div className="absolute -bottom-1 -right-1 p-1 rounded-full bg-slate-900 border border-slate-700 text-amber-400 shadow">
+          <div className="absolute -bottom-1 -right-1 p-1 rounded-full bg-slate-900 border border-slate-700 text-amber-400 shadow z-10">
             <HardHat className="w-3.5 h-3.5" />
           </div>
         </div>

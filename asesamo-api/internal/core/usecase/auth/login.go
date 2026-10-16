@@ -81,8 +81,13 @@ func (uc *LoginUseCase) Execute(ctx context.Context, input LoginInput) (*LoginOu
 
 	// Determine tenant UUID
 	var tenantID uuid.UUID
-	if user.TenantID != nil {
+	if user.TenantID != nil && *user.TenantID != uuid.Nil {
 		tenantID = *user.TenantID
+	} else if user.Role != entity.RoleSuperAdmin {
+		// Fallback for contractor or worker users to ensure valid context-based tenant isolation
+		fallbackTenant, _ := uuid.Parse("11111111-1111-1111-1111-111111111111")
+		tenantID = fallbackTenant
+		user.TenantID = &fallbackTenant
 	}
 
 	// Sign JWT

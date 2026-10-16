@@ -56,7 +56,9 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 			TenantID:        output.User.TenantID,
 			Email:           output.User.Email,
 			FullName:        output.User.FullName,
+			Phone:           output.User.Phone,
 			Role:            string(output.User.Role),
+			AvatarR2Key:     output.User.AvatarR2Key,
 			ThemePreference: output.User.EffectiveTheme(),
 		},
 	}

@@ -97,3 +97,68 @@ Implement the user-facing upload workflow in `asesamo-web`:
 ### Frontend Web Flow Verification
 - [ ] An authenticated worker or contractor can navigate to the document management screen in `asesamo-web`.
 - [ ] Submitting a file through the upload UI uploads the document, displays success feedback via toast, and refreshes the document list showing the item as "Pendiente de revisión".
+
+
+## Follow-up — 2026-10-15T16:07:31Z
+
+Build the complete **Permisos de Trabajo de Alto Riesgo (PTAR Digital)** module for ASESAMO: an end-to-end capability enabling contractors and EHS supervisors to issue, validate, authorize, and monitor high-risk work permits in real-time, enforcing automated Mexican safety compliance locks (STPS: NOM-009, NOM-033, NOM-027, NOM-029).
+
+Working directory: /Users/jasbotello/devel/asesamo
+Integrity mode: development
+
+Reference materials:
+- Architecture & standards: `DEVELOPMENT_RULES.md`
+- Existing database migrations: `db/migrations/`
+- Existing backend: `asesamo-api` (Go Clean Architecture, PostgreSQL, Chi router)
+- Existing frontend: `asesamo-web` (Next.js 14 App Router, Tailwind CSS, shadcn/ui)
+
+## Requirements
+
+### R1. Database Schema & Migration (`db/migrations/000003_create_work_permits.*.sql`)
+Create the PostgreSQL migration for PTAR:
+- `work_permits`: `id` (UUID), `tenant_id`, `permit_number` (e.g. `PTAR-2026-0001`), `permit_type` (`heights`, `confined_space`, `hot_work`, `electrical_loto`), `status` (`draft`, `pending_approval`, `approved_active`, `suspended`, `closed`, `cancelled`), `contractor_id`, `work_area`/`location`, `description`, `hazard_description`, `start_time`, `end_time`, `created_by_user_id`, `approved_by_user_id`, timestamps.
+- `permit_workers`: junction table linking `permit_id` and `worker_id` with compliance status snapshot at assignment time.
+- `permit_checklists`: JSONB or relational items detailing mandatory safety verifications per NOM (e.g., atmospheric test for confined spaces, fire extinguisher in place for hot work, harness inspection for heights, zero energy verification for LOTO).
+- `permit_signatures`: digital sign-off record (role: `requester`, `contractor_supervisor`, `ehs_authorizer`, timestamp, signature metadata/notes).
+
+### R2. Backend Service Domain & API (`asesamo-api`)
+Implement following Clean Architecture:
+- **Candado Inteligente (Compliance Engine):** When attaching workers or submitting permit for approval, verify:
+  1. Worker has approved & active DC-3 corresponding to the hazard type (e.g., DC-3 Alturas for `heights`, DC-3 Espacios Confinados for `confined_space`).
+  2. Worker has valid medical fitness certificate (`pending` or `expired` blocks issuance).
+  3. Contractor company is active and not suspended.
+- **Endpoints:**
+  - `POST /api/v1/permits`: Create new PTAR draft with metadata, work area, hazard type, and schedule.
+  - `GET /api/v1/permits`: List permits with filters (`status`, `permit_type`, `contractor_id`, date range).
+  - `GET /api/v1/permits/:id`: Detailed permit view with assigned workers, compliance status check, checklist items, and signatures.
+  - `POST /api/v1/permits/:id/workers`: Assign/remove workers (triggers Candado Inteligente verification).
+  - `PATCH /api/v1/permits/:id/checklist`: Update safety verification checklist items.
+  - `POST /api/v1/permits/:id/approve`: EHS digital authorization (validates all checklist items complete and worker compliance satisfied).
+  - `POST /api/v1/permits/:id/status`: Transition status (`close`, `suspend`, `cancel`) with reason and audit timestamp.
+- Strict tenant isolation and localized Spanish error messages. Unit tests for permit state transitions and compliance validation gate.
+
+### R3. Frontend PTAR Management UI (`asesamo-web`)
+Implement modern, responsive interface under `/permisos` (or `/ptar`):
+- **Permit Dashboard & List:** Filterable grid/table by hazard badge (`Alturas NOM-009`, `Espacios Confinados NOM-033`, `Corte y Soldadura NOM-027`, `LOTO NOM-029`), status badge (Borrador, Pendiente EHS, Activo en Campo, Cerrado), contractor, and validity window.
+- **PTAR Creation Wizard / Form:**
+  - Step 1: Work details (type, area, schedule, description).
+  - Step 2: Crew assignment with instant visual compliance flags (Green badge for validated DC-3/Medical, Red alert blocking assignment if non-compliant with reason).
+  - Step 3: Interactive STPS checklist dynamically loaded based on permit type.
+- **EHS Authorization & Execution Modal/Page:**
+  - Fast review of checklist verification, atmospheric/safety measurements, and one-click EHS digital approval with status badge switch to "Activo en Campo".
+  - Field status controls: Suspend (emergency/weather halt) and Close (work completed, area cleaned).
+
+## Acceptance Criteria
+
+### Database & Backend Verification
+- [ ] Migration `000003_create_work_permits.up.sql` runs cleanly without schema conflicts.
+- [ ] Attempting to approve a permit or assign a worker who lacks active DC-3 or valid medical cert fails with HTTP 422 and clear Spanish explanation ("El trabajador no cuenta con DC-3 vigente para trabajos en alturas", etc.).
+- [ ] EHS authorization successfully transitions permit from `pending_approval` to `approved_active` and stores authorizer ID and timestamp.
+- [ ] All Go tests (`go test ./...`) pass including new unit tests for the permit service and compliance checks.
+
+### Frontend Flow Verification
+- [ ] A contractor supervisor can create a new PTAR draft and select required workers.
+- [ ] The crew selection screen visually flags compliant vs non-compliant workers with reasons (DC-3 missing/expired).
+- [ ] An EHS user can review the checklist, verify compliance, and approve the permit.
+- [ ] The permit appears in real-time as "Activo en Campo" with countdown / expiration time indicator.
+- [ ] TypeScript and frontend build (`npm run build`) complete without errors.

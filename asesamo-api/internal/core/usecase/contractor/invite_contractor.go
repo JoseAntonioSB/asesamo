@@ -76,9 +76,18 @@ func (uc *InviteContractorUseCase) Execute(ctx context.Context, in InviteContrac
 	}
 
 	// Verify plant exists
-	_, err := uc.plantRepo.GetByID(ctx, in.PlantID)
+	plant, err := uc.plantRepo.GetByID(ctx, in.PlantID)
 	if err != nil {
 		return nil, domainErrors.ErrPlantNotFound.WithMessage("La planta especificada no existe.")
+	}
+
+	resolvedTenantID := in.TenantID
+	if resolvedTenantID == uuid.Nil && plant != nil {
+		resolvedTenantID = plant.TenantID
+	}
+	var tenantPtr *uuid.UUID
+	if resolvedTenantID != uuid.Nil {
+		tenantPtr = &resolvedTenantID
 	}
 
 	// 1. Resolve or create contractor_admin user
@@ -96,7 +105,7 @@ func (uc *InviteContractorUseCase) Execute(ctx context.Context, in InviteContrac
 		adminUserID = uuid.New()
 		newUser := &entity.User{
 			ID:           adminUserID,
-			TenantID:     nil, // global
+			TenantID:     tenantPtr,
 			Email:        adminEmail,
 			FullName:     adminFullName,
 			Phone:        &in.AdminPhone,

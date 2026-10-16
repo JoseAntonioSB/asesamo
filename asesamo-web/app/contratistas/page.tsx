@@ -38,11 +38,12 @@ function ContratistasContent() {
   const { user, logout } = useAuth();
 
   const isContractorAdmin = user?.role === 'contractor_admin' || user?.role === 'contractor';
+  const isGuard = user?.role === 'guard';
   const isPlantOrEhsAdmin =
     user?.role === 'plant_admin' ||
+    user?.role === 'tenant_admin' ||
     user?.role === 'ehs_manager' ||
-    user?.role === 'super_admin' ||
-    user?.role === 'guard';
+    user?.role === 'super_admin';
 
   // Data states
   const [contractors, setContractors] = useState<ContractorItem[]>([]);
@@ -223,7 +224,7 @@ function ContratistasContent() {
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
-            {isPlantOrEhsAdmin && (
+            {isGuard && (
               <Link href="/caseta">
                 <Button
                   size="sm"
@@ -232,6 +233,20 @@ function ContratistasContent() {
                 >
                   <ArrowLeft className="w-3.5 h-3.5" />
                   <span className="hidden sm:inline">Caseta</span>
+                </Button>
+              </Link>
+            )}
+
+            {isPlantOrEhsAdmin && (
+              <Link href="/reportes">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="border-indigo-800/60 bg-indigo-950/40 text-indigo-300 hover:text-white hover:bg-indigo-900/60 text-xs gap-1.5"
+                  title="Panel de Reportes y Auditoría STPS"
+                >
+                  <BarChart3 className="w-3.5 h-3.5 text-indigo-400" />
+                  <span className="hidden sm:inline">Panel Admin</span>
                 </Button>
               </Link>
             )}
@@ -274,19 +289,29 @@ function ContratistasContent() {
               </Button>
             </Link>
 
-            {isPlantOrEhsAdmin && (
-              <Link href="/reportes">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="border-slate-700 text-indigo-300 hover:text-white hover:bg-slate-800 text-xs gap-1.5"
-                  title="Métricas y Reportes STPS"
-                >
-                  <BarChart3 className="w-3.5 h-3.5 text-indigo-400" />
-                  <span className="hidden sm:inline">Reportes</span>
-                </Button>
-              </Link>
-            )}
+            {/* User Profile Pill */}
+            <Link
+              href="/perfil"
+              className="flex items-center gap-2 px-2.5 py-1 rounded-xl border border-slate-800 bg-slate-900 hover:bg-slate-800 hover:border-slate-700 transition-colors"
+              title="Ver Mi Perfil"
+            >
+              <div className="h-6 w-6 rounded-lg bg-slate-800 text-slate-200 font-bold text-[10px] flex items-center justify-center border border-slate-700 overflow-hidden relative">
+                {user?.id && (
+                  <img
+                    src={`/api/v1/users/${user.id}/avatar`}
+                    alt={user.full_name || 'Usuario'}
+                    className="w-full h-full object-cover absolute inset-0"
+                    onError={(e) => {
+                      (e.target as HTMLElement).style.display = 'none';
+                    }}
+                  />
+                )}
+                <span>{(user?.full_name || 'US').slice(0, 2).toUpperCase()}</span>
+              </div>
+              <span className="text-xs font-semibold text-slate-200 hidden md:inline max-w-[120px] truncate">
+                {user?.full_name || 'Perfil'}
+              </span>
+            </Link>
 
             {/* Theme Toggle */}
             <ThemeToggle />

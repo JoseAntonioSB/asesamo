@@ -118,3 +118,53 @@ export function clearAuthSession(): void {
   removeStoredToken();
   removeStoredUser();
 }
+
+/**
+ * Safely extracts the user role from a JWT token payload without external libraries.
+ * Compatible with Edge runtime, Node.js, and browser environments.
+ */
+export function getRoleFromJwt(token?: string | null): string | null {
+  if (!token) return null;
+  try {
+    const parts = token.split('.');
+    if (parts.length < 2) return null;
+    const base64Url = parts[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    let jsonPayload = '';
+    if (typeof atob === 'function') {
+      jsonPayload = decodeURIComponent(
+        atob(base64)
+          .split('')
+          .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+          .join('')
+      );
+    } else if (typeof Buffer !== 'undefined') {
+      jsonPayload = Buffer.from(base64, 'base64').toString('utf-8');
+    }
+    const parsed = JSON.parse(jsonPayload);
+    return parsed.role || null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Maps user roles to their corresponding natural Home Page in ASESAMO.
+ */
+export function getDefaultHomeForRole(role?: string | null): string {
+  switch (role) {
+    case 'contractor_admin':
+      return '/contratistas';
+    case 'ehs_manager':
+      return '/ehs/aprobaciones';
+    case 'worker':
+      return '/credencial';
+    case 'plant_admin':
+    case 'tenant_admin':
+      return '/reportes';
+    case 'guard':
+    default:
+      return '/caseta';
+  }
+}
+

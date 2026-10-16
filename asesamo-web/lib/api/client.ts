@@ -15,6 +15,7 @@ import {
   CheckOutRequest,
   CheckOutOutput,
   AccessLogsQueryParams,
+  AccessLogItem,
   DocumentItem,
   DocumentTypeItem,
   UploadDocumentParams,
@@ -28,6 +29,22 @@ import {
   ToggleWorkerStatusPayload,
   ReportMetricsResponse,
   ReportFilterParams,
+  UserProfileDetail,
+  UpdateProfilePayload,
+  AvatarUploadResponse,
+  WorkPermitItem,
+  WorkerComplianceStatus,
+  PermitChecklistItem,
+  PermitSignatureItem,
+  PermitType,
+  PermitStatus,
+  PermitWorkerDetail,
+  CreatePermitDraftPayload,
+  AssignPermitWorkersPayload,
+  UpdatePermitChecklistPayload,
+  ApprovePermitPayload,
+  TransitionPermitStatusPayload,
+  PermitFilterParams,
 } from './types';
 import { getStoredToken, setStoredToken, setStoredUser, clearAuthSession } from '../auth';
 
@@ -254,7 +271,7 @@ export class ApiClient {
    */
   public async getAccessLogs(
     params: AccessLogsQueryParams = {}
-  ): Promise<{ logs: any[]; meta?: PaginationMeta }> {
+  ): Promise<{ logs: AccessLogItem[]; meta?: PaginationMeta }> {
     const query = new URLSearchParams();
     if (params.plant_id) query.set('plant_id', params.plant_id);
     if (params.access_point_id) query.set('access_point_id', params.access_point_id);
@@ -380,6 +397,64 @@ export class ApiClient {
       body: JSON.stringify({ theme }),
     });
     return res.data;
+  }
+
+  /**
+   * GET /api/v1/users/me
+   * Retrieves full profile details of authenticated user.
+   */
+  public async getProfile(): Promise<UserProfileDetail> {
+    const res = await this.request<UserProfileDetail>('/users/me', {
+      method: 'GET',
+    });
+    return res.data;
+  }
+
+  /**
+   * PATCH /api/v1/users/me
+   * Updates user name, phone, or password.
+   */
+  public async updateProfile(payload: UpdateProfilePayload): Promise<UserProfileDetail> {
+    const res = await this.request<UserProfileDetail>('/users/me', {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    });
+    return res.data;
+  }
+
+  /**
+   * POST /api/v1/users/me/avatar
+   * Uploads or updates current user's profile photo.
+   */
+  public async uploadMyAvatar(file: File): Promise<AvatarUploadResponse> {
+    const formData = new FormData();
+    formData.append('avatar', file);
+    const res = await this.request<AvatarUploadResponse>('/users/me/avatar', {
+      method: 'POST',
+      body: formData,
+    });
+    return res.data;
+  }
+
+  /**
+   * POST /api/v1/users/:id/avatar
+   * Uploads or updates profile photo for a specific worker/user.
+   */
+  public async uploadUserAvatar(userId: string, file: File): Promise<AvatarUploadResponse> {
+    const formData = new FormData();
+    formData.append('avatar', file);
+    const res = await this.request<AvatarUploadResponse>(`/users/${encodeURIComponent(userId)}/avatar`, {
+      method: 'POST',
+      body: formData,
+    });
+    return res.data;
+  }
+
+  /**
+   * Returns full public URL for user's avatar image with optional cache buster.
+   */
+  public getUserAvatarUrl(userId: string): string {
+    return `${this.baseUrl}/users/${encodeURIComponent(userId)}/avatar`;
   }
 
   /**
@@ -580,6 +655,233 @@ export class ApiClient {
       throw new ApiError('EXPORT_ERROR', 'No se pudo generar la matriz de cumplimiento STPS.', response.status);
     }
     return response.blob();
+  }
+
+  // ==========================================
+  // 10. High-Risk Work Permits (PTAR Digital)
+  // ==========================================
+
+  /**
+   * GET /api/v1/permits
+   * Lists high-risk work permits with optional filtering.
+   */
+  public async getPermits(
+    params: PermitFilterParams = {}
+  ): Promise<{ permits: WorkPermitItem[]; meta?: PaginationMeta }> {
+    const query = new URLSearchParams();
+    if (params.plant_id) query.set('plant_id', params.plant_id);
+    if (params.contractor_id) query.set('contractor_id', params.contractor_id);
+    if (params.status) query.set('status', params.status);
+    if (params.permit_type) query.set('permit_type', params.permit_type);
+    if (params.start_date || params.from) query.set('start_date', params.start_date || params.from || '');
+    if (params.end_date || params.to) query.set('end_date', params.end_date || params.to || '');
+    if (params.page) query.set('page', params.page.toString());
+    if (params.per_page) query.set('per_page', params.per_page.toString());
+
+    const qs = query.toString();
+    const res = await this.request<WorkPermitItem[], PaginationMeta>(`/permits${qs ? `?${qs}` : ''}`, {
+      method: 'GET',
+    });
+    return {
+      permits: res.data || [],
+      meta: res.meta,
+    };
+  }
+
+  /**
+   * GET /api/v1/permits/:id
+   * Retrieves single permit with details, crew, checklist, and signatures.
+   */
+  public async getPermit(id: string): Promise<WorkPermitItem> {
+    const res = await this.request<WorkPermitItem>(`/permits/${encodeURIComponent(id)}`, {
+      method: 'GET',
+    });
+    return res.data;
+  }
+
+  /**
+   * POST /api/v1/permits
+   * Creates a new draft work permit.
+   */
+  public async createPermit(payload: CreatePermitDraftPayload): Promise<WorkPermitItem> {
+    const res = await this.request<WorkPermitItem>('/permits', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    return res.data;
+  }
+
+  /**
+   * Evaluates candidate crew workers against Candado Inteligente rules.
+   * If backend dedicated endpoint /permits/workers/compliance is available, queries it.
+   * Otherwise evaluates compliance using contractor workers list and document statuses.
+   */
+  public async checkCrewCompliance(
+    contractorId: string,
+    permitType: PermitType
+  ): Promise<WorkerComplianceStatus[]> {
+    const qs = `?contractor_id=${encodeURIComponent(contractorId)}&permit_type=${encodeURIComponent(permitType)}`;
+    try {
+      const res = await this.request<WorkerComplianceStatus[]>(`/permits/workers/compliance${qs}`, {
+        method: 'GET',
+      });
+      if (res.data && Array.isArray(res.data) && res.data.length > 0) {
+        return res.data;
+      }
+    } catch {
+      // Backend dedicated compliance endpoint optional; evaluate client-side
+    }
+
+    const workers = await this.listContractorWorkers(contractorId);
+    const results: WorkerComplianceStatus[] = [];
+
+    const hazardLabels: Record<PermitType, { name: string; nom: string }> = {
+      heights: { name: 'trabajos en alturas', nom: 'NOM-009-STPS-2011' },
+      confined_space: { name: 'espacios confinados', nom: 'NOM-033-STPS-2015' },
+      hot_work: { name: 'corte y soldadura', nom: 'NOM-027-STPS-2008' },
+      electrical_loto: { name: 'seguridad eléctrica y LOTO', nom: 'NOM-029-STPS-2011' },
+    };
+
+    const hazardInfo = hazardLabels[permitType] || { name: 'trabajo de alto riesgo', nom: 'STPS' };
+
+    for (const w of workers) {
+      const blockingReasons: string[] = [];
+      let hasValidDC3 = false;
+      let dc3DocId: string | null = null;
+      let dc3ExpiresAt: string | null = null;
+      let hasValidMedical = false;
+      let medicalDocId: string | null = null;
+      let medicalExpiresAt: string | null = null;
+
+      try {
+        const docs = await this.getMyDocuments({ worker_id: w.worker_id });
+        const now = new Date();
+
+        for (const doc of docs) {
+          const typeCode = (doc.document_type_code || '').toUpperCase();
+          const isApproved = doc.status === 'approved';
+          const notExpired = !doc.expires_at || new Date(doc.expires_at) > now;
+
+          if (typeCode === 'MEDICAL') {
+            medicalDocId = doc.id;
+            medicalExpiresAt = doc.expires_at || null;
+            if (isApproved && notExpired) {
+              hasValidMedical = true;
+            }
+          }
+
+          const isDC3 = typeCode.startsWith('DC3') || typeCode === 'DC-3';
+          if (isDC3) {
+            dc3DocId = doc.id;
+            dc3ExpiresAt = doc.expires_at || null;
+            if (isApproved && notExpired) {
+              hasValidDC3 = true;
+            }
+          }
+        }
+      } catch {
+        // Continue evaluation
+      }
+
+      if (!w.is_active || !w.user_is_active) {
+        blockingReasons.push('El perfil del trabajador se encuentra inactivo.');
+      }
+      if (!hasValidDC3) {
+        blockingReasons.push(`Falta constancia DC-3 vigente para ${hazardInfo.name} (${hazardInfo.nom}).`);
+      }
+      if (!hasValidMedical) {
+        blockingReasons.push('Certificado de aptitud médica no acreditado o expirado.');
+      }
+
+      results.push({
+        worker_id: w.worker_id,
+        full_name: w.full_name,
+        job_title: w.job_title || undefined,
+        curp: w.curp || undefined,
+        imss_number: w.imss_number || undefined,
+        is_compliant: blockingReasons.length === 0,
+        blocking_reasons: blockingReasons,
+        has_valid_dc3: hasValidDC3,
+        dc3_document_id: dc3DocId,
+        dc3_expires_at: dc3ExpiresAt,
+        has_valid_medical: hasValidMedical,
+        medical_document_id: medicalDocId,
+        medical_expires_at: medicalExpiresAt,
+        contractor_active: true,
+      });
+    }
+
+    return results;
+  }
+
+  /**
+   * POST /api/v1/permits/:id/workers
+   * Assigns or removes crew workers to/from a permit, enforcing Candado Inteligente locks.
+   */
+  public async assignPermitWorkers(
+    permitId: string,
+    workerIds: string[],
+    action: 'assign' | 'remove' = 'assign'
+  ): Promise<WorkPermitItem> {
+    const payload: AssignPermitWorkersPayload = {
+      worker_ids: workerIds,
+      action,
+    };
+    const res = await this.request<WorkPermitItem>(`/permits/${encodeURIComponent(permitId)}/workers`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    return res.data;
+  }
+
+  /**
+   * PATCH /api/v1/permits/:id/checklist
+   * Updates safety verification checklist items for a permit.
+   */
+  public async updatePermitChecklist(
+    permitId: string,
+    payload: UpdatePermitChecklistPayload
+  ): Promise<WorkPermitItem> {
+    const res = await this.request<WorkPermitItem>(`/permits/${encodeURIComponent(permitId)}/checklist`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    });
+    return res.data;
+  }
+
+  /**
+   * POST /api/v1/permits/:id/approve
+   * Performs EHS digital authorization and transitions permit to 'approved_active'.
+   */
+  public async approvePermit(
+    permitId: string,
+    notes?: string,
+    signatureData?: string
+  ): Promise<WorkPermitItem> {
+    const payload: ApprovePermitPayload = {
+      notes: notes?.trim() || undefined,
+      signature_data: signatureData?.trim() || undefined,
+    };
+    const res = await this.request<WorkPermitItem>(`/permits/${encodeURIComponent(permitId)}/approve`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    return res.data;
+  }
+
+  /**
+   * POST /api/v1/permits/:id/status
+   * Transitions permit lifecycle status (submit, suspend, resume, close, cancel).
+   */
+  public async transitionPermitStatus(
+    permitId: string,
+    payload: TransitionPermitStatusPayload
+  ): Promise<WorkPermitItem> {
+    const res = await this.request<WorkPermitItem>(`/permits/${encodeURIComponent(permitId)}/status`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    return res.data;
   }
 
   /**

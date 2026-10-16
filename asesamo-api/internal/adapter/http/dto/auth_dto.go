@@ -14,7 +14,9 @@ type UserProfileResponse struct {
 	TenantID        *uuid.UUID `json:"tenant_id,omitempty"`
 	Email           string     `json:"email"`
 	FullName        string     `json:"full_name"`
+	Phone           *string    `json:"phone,omitempty"`
 	Role            string     `json:"role"`
+	AvatarR2Key     *string    `json:"avatar_r2_key,omitempty"`
 	ThemePreference string     `json:"theme_preference"`
 }
 

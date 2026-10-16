@@ -126,7 +126,7 @@ export function QuickFillPresets({ onSelectPreset, disabled = false }: QuickFill
             type="button"
             disabled={disabled}
             onClick={() => onSelectPreset(preset.uuid)}
-            className={`group flex flex-col justify-between rounded-xl border ${preset.borderClass} bg-slate-950/80 p-3.5 text-left transition-all active:scale-[0.98] disabled:opacity-40 shadow-sm cursor-pointer`}
+            className={`group flex flex-col justify-between rounded-xl border ${preset.borderClass} bg-slate-950/80 p-3.5 text-left transition-[transform,border-color,background-color,box-shadow] duration-150 ease-out active:scale-[0.97] disabled:opacity-40 shadow-sm cursor-pointer`}
           >
             <div>
               <div className="flex items-center justify-between gap-1 mb-1.5">

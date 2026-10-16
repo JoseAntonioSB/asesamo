@@ -41,6 +41,15 @@ func (m *RouterMockUserRepo) UpdateLastLogin(ctx context.Context, id uuid.UUID, 
 func (m *RouterMockUserRepo) UpdateThemePreference(ctx context.Context, id uuid.UUID, theme string) error {
 	return nil
 }
+func (m *RouterMockUserRepo) UpdateProfile(ctx context.Context, id uuid.UUID, fullName string, phone *string) error {
+	return nil
+}
+func (m *RouterMockUserRepo) UpdateAvatar(ctx context.Context, id uuid.UUID, avatarKey string) error {
+	return nil
+}
+func (m *RouterMockUserRepo) UpdatePassword(ctx context.Context, id uuid.UUID, passwordHash string) error {
+	return nil
+}
 
 
 type RouterMockAccessPointRepo struct{ mock.Mock }

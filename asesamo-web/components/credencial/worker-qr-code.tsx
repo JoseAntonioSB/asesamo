@@ -80,7 +80,7 @@ export function WorkerQRCode({
       <div className={`flex flex-col items-center text-center ${className}`}>
         {/* QR Code Frame with Industrial Tactile Container */}
         <div
-          className={`relative p-3 rounded-2xl bg-white border-2 shadow-xl transition-all ${getBorderColor()}`}
+          className={`relative p-3 rounded-2xl bg-white border-2 shadow-xl transition-[border-color,box-shadow] duration-200 ease-out ${getBorderColor()}`}
         >
           {qrDataUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -99,7 +99,7 @@ export function WorkerQRCode({
           <button
             type="button"
             onClick={() => setIsScannerModalOpen(true)}
-            className="absolute bottom-2 right-2 p-1.5 rounded-lg bg-slate-900/80 hover:bg-slate-950 text-white backdrop-blur shadow-md active:scale-95 transition-all"
+            className="absolute bottom-2 right-2 p-1.5 rounded-lg bg-slate-900/80 hover:bg-slate-950 text-white backdrop-blur shadow-md active:scale-[0.97] transition-[transform,background-color] duration-150 ease-out cursor-pointer"
             title="Ampliar QR para escaneo en caseta"
             aria-label="Ampliar QR para escaneo"
           >

@@ -325,6 +325,30 @@ function CredencialContent() {
               </Link>
             )}
 
+            {/* User Profile Pill */}
+            <Link
+              href="/perfil"
+              className="flex items-center gap-2 px-2.5 py-1 rounded-xl border border-slate-800 bg-slate-900 hover:bg-slate-800 hover:border-slate-700 transition-colors"
+              title="Ver Mi Perfil"
+            >
+              <div className="h-6 w-6 rounded-lg bg-slate-800 text-slate-200 font-bold text-[10px] flex items-center justify-center border border-slate-700 overflow-hidden relative">
+                {user?.id && (
+                  <img
+                    src={`/api/v1/users/${user.id}/avatar`}
+                    alt={user.full_name || 'Usuario'}
+                    className="w-full h-full object-cover absolute inset-0"
+                    onError={(e) => {
+                      (e.target as HTMLElement).style.display = 'none';
+                    }}
+                  />
+                )}
+                <span>{(user?.full_name || 'US').slice(0, 2).toUpperCase()}</span>
+              </div>
+              <span className="text-xs font-semibold text-slate-200 hidden md:inline max-w-[120px] truncate">
+                {user?.full_name || 'Perfil'}
+              </span>
+            </Link>
+
             {/* Theme Toggle Button */}
             <ThemeToggle />
 

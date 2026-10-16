@@ -38,8 +38,39 @@ export interface UserProfile {
   tenant_id?: string; // UUID
   email: string;
   full_name: string;
+  phone?: string;
   role: UserRole | string;
+  avatar_r2_key?: string;
   theme_preference?: 'light' | 'dark' | 'system';
+}
+
+export interface UserProfileDetail {
+  id: string;
+  tenant_id?: string;
+  email: string;
+  full_name: string;
+  phone?: string;
+  role: UserRole | string;
+  avatar_r2_key?: string;
+  theme_preference: 'light' | 'dark' | 'system';
+  is_active: boolean;
+  contractor_id?: string;
+  contractor_name?: string;
+  plant_id?: string;
+  plant_name?: string;
+  created_at: string;
+}
+
+export interface UpdateProfilePayload {
+  full_name: string;
+  phone?: string;
+  current_password?: string;
+  new_password?: string;
+}
+
+export interface AvatarUploadResponse {
+  avatar_url: string;
+  avatar_key: string;
 }
 
 // ==========================================
@@ -208,6 +239,22 @@ export interface CheckOutOutput {
 // ==========================================
 // 6. Access Logs & Audit
 // ==========================================
+
+export interface AccessLogItem {
+  id: string;
+  tenant_id: string;
+  plant_id: string;
+  access_point_id: string;
+  user_id: string;
+  contractor_id?: string;
+  processed_by?: string;
+  checked_in_at: string;
+  checked_out_at?: string;
+  result: AccessResult;
+  denial_reason?: string | null;
+  notes?: string | null;
+  created_at: string;
+}
 
 export interface AccessLogsQueryParams {
   plant_id?: string;
@@ -378,5 +425,202 @@ export interface ReportFilterParams {
   from?: string;
   to?: string;
 }
+
+// ==========================================
+// 10. High-Risk Work Permits (PTAR Digital)
+// ==========================================
+
+export type PermitType = 'heights' | 'confined_space' | 'hot_work' | 'electrical_loto';
+
+export type PermitStatus =
+  | 'draft'
+  | 'pending_approval'
+  | 'approved_active'
+  | 'suspended'
+  | 'closed'
+  | 'cancelled';
+
+export type PermitSignatureRole = 'requester' | 'contractor_supervisor' | 'ehs_authorizer';
+
+export interface WorkerComplianceSnapshot {
+  is_compliant: boolean;
+  block_reason?: string | null;
+  dc3_status: string;
+  dc3_code?: string;
+  dc3_expires_at?: string | null;
+  medical_status: string;
+  medical_expires_at?: string | null;
+  contractor_status: string;
+  evaluated_at: string;
+}
+
+export interface WorkerComplianceStatus {
+  worker_id: string;
+  full_name: string;
+  job_title?: string | null;
+  curp?: string | null;
+  imss_number?: string | null;
+  is_compliant: boolean;
+  blocking_reasons: string[];
+  has_valid_dc3: boolean;
+  dc3_document_id?: string | null;
+  dc3_expires_at?: string | null;
+  has_valid_medical: boolean;
+  medical_document_id?: string | null;
+  medical_expires_at?: string | null;
+  contractor_active: boolean;
+}
+
+export interface PermitWorkerDetail {
+  id: string; // UUID
+  tenant_id?: string;
+  permit_id: string;
+  worker_id: string;
+  compliance_status: 'compliant' | 'non_compliant' | 'warning' | string;
+  compliance_snapshot?: WorkerComplianceSnapshot;
+  assigned_by?: string | null;
+  assigned_at?: string;
+  created_at?: string;
+  full_name?: string;
+  worker_name?: string;
+  job_title?: string | null;
+  curp?: string | null;
+  imss_number?: string | null;
+  avatar_r2_key?: string | null;
+  is_compliant?: boolean;
+}
+
+export interface PermitChecklistItem {
+  id: string; // UUID
+  tenant_id?: string;
+  permit_id?: string;
+  item_key: string;
+  nom_standard?: string;
+  title?: string;
+  description?: string | null;
+  category: 'safety' | 'ppe' | 'equipment' | 'atmospheric' | 'emergency' | string;
+  is_mandatory?: boolean;
+  is_verified?: boolean;
+  is_checked?: boolean; // alias for is_verified
+  verified_by?: string | null;
+  verified_by_user_id?: string | null;
+  verified_by_name?: string | null;
+  verified_at?: string | null;
+  measurements?: Record<string, any> | null;
+  measurement_value?: string | null;
+  notes?: string | null;
+  display_order?: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface PermitSignatureItem {
+  id: string; // UUID
+  tenant_id?: string;
+  permit_id: string;
+  user_id?: string;
+  signer_user_id?: string;
+  signer_name?: string;
+  signer_full_name?: string;
+  role: PermitSignatureRole;
+  signature_data?: string | null;
+  signature_hash?: string | null;
+  notes?: string | null;
+  signed_at: string;
+  created_at?: string;
+}
+
+export interface WorkPermitItem {
+  id: string; // UUID
+  tenant_id?: string;
+  plant_id?: string;
+  plant_name?: string;
+  permit_number: string;
+  permit_type: PermitType;
+  status: PermitStatus;
+  contractor_id: string;
+  contractor_name?: string;
+  work_area: string;
+  description: string;
+  hazard_description?: string | null;
+  start_time: string; // ISO 8601
+  end_time: string; // ISO 8601
+  created_by_user_id: string;
+  created_by_name?: string;
+  approved_by_user_id?: string | null;
+  approved_by_name?: string | null;
+  approved_at?: string | null;
+  suspended_at?: string | null;
+  closed_at?: string | null;
+  cancelled_at?: string | null;
+  status_reason?: string | null;
+  suspension_reason?: string | null;
+  closure_notes?: string | null;
+  created_at: string;
+  updated_at: string;
+  worker_count?: number;
+  workers?: PermitWorkerDetail[];
+  checklist?: PermitChecklistItem[];
+  checklists?: PermitChecklistItem[]; // alias for compatibility
+  signatures?: PermitSignatureItem[];
+}
+
+export interface CreatePermitDraftPayload {
+  plant_id?: string;
+  contractor_id?: string;
+  permit_type: PermitType;
+  work_area: string;
+  description: string;
+  hazard_description?: string;
+  start_time: string;
+  end_time: string;
+  notes?: string;
+}
+
+export interface AssignPermitWorkersPayload {
+  worker_ids: string[];
+  action?: 'assign' | 'remove';
+}
+
+export interface UpdatePermitChecklistItemPayload {
+  item_key: string;
+  item_code?: string;
+  is_verified?: boolean;
+  is_checked?: boolean;
+  notes?: string;
+  measurements?: Record<string, any>;
+  measurement_value?: string;
+}
+
+export interface UpdatePermitChecklistPayload {
+  items: UpdatePermitChecklistItemPayload[];
+}
+
+export interface ApprovePermitPayload {
+  notes?: string;
+  signature_data?: string;
+}
+
+export interface TransitionPermitStatusPayload {
+  action: 'submit' | 'suspend' | 'resume' | 'close' | 'cancel';
+  reason?: string;
+  notes?: string;
+  signature_data?: string;
+}
+
+export interface PermitFilterParams {
+  plant_id?: string;
+  contractor_id?: string;
+  status?: PermitStatus | string;
+  permit_type?: PermitType | string;
+  start_date?: string;
+  end_date?: string;
+  from?: string;
+  to?: string;
+  search?: string;
+  page?: number;
+  per_page?: number;
+}
+
 
 

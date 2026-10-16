@@ -25,6 +25,7 @@ type RouterConfig struct {
 	WorkerHandler      *handler.WorkerHandler
 	ContractorHandler  *handler.ContractorHandler
 	ReportHandler      *handler.ReportHandler
+	PermitHandler      *handler.PermitHandler
 	JWTSecret          string
 	CORSOrigins        []string
 	LoginRateLimit     int
@@ -65,6 +66,11 @@ func NewRouter(cfg RouterConfig) http.Handler {
 		// Public Auth
 		r.With(loginLimiter).Post("/auth/login", cfg.AuthHandler.Login)
 
+		// Public Avatar route (for <img> tags in badges and cards)
+		if cfg.UserHandler != nil {
+			r.Get("/users/{id}/avatar", cfg.UserHandler.GetAvatar)
+		}
+
 		// Protected routes (JWT authenticated)
 		r.Group(func(r chi.Router) {
 			r.Use(customMiddleware.Auth(cfg.JWTSecret))
@@ -91,7 +97,11 @@ func NewRouter(cfg RouterConfig) http.Handler {
 
 			// User Profile & Preferences
 			if cfg.UserHandler != nil {
+				r.Get("/users/me", cfg.UserHandler.GetProfile)
+				r.Patch("/users/me", cfg.UserHandler.UpdateProfile)
 				r.Patch("/users/me/theme", cfg.UserHandler.UpdateTheme)
+				r.Post("/users/me/avatar", cfg.UserHandler.UploadMyAvatar)
+				r.Post("/users/{id}/avatar", cfg.UserHandler.UploadUserAvatar)
 			}
 
 			// Worker Credential & Mobile Badge
@@ -121,10 +131,23 @@ func NewRouter(cfg RouterConfig) http.Handler {
 			// Metrics & STPS Audit Reports (Phase 2 Module 2)
 			if cfg.ReportHandler != nil {
 				r.Route("/reports", func(rr chi.Router) {
-					rr.Use(customMiddleware.RequireRole("plant_admin", "ehs_manager", "tenant_admin", "guard"))
+					rr.Use(customMiddleware.RequireRole("plant_admin", "ehs_manager", "tenant_admin", "guard", "contractor_admin"))
 					rr.Get("/metrics", cfg.ReportHandler.GetMetrics)
 					rr.Get("/export/access-logs", cfg.ReportHandler.ExportAccessLogs)
 					rr.Get("/export/compliance", cfg.ReportHandler.ExportCompliance)
+				})
+			}
+
+			// High-Risk Work Permits (PTAR Digital)
+			if cfg.PermitHandler != nil {
+				r.Route("/permits", func(pr chi.Router) {
+					pr.Get("/", cfg.PermitHandler.ListPermits)
+					pr.With(customMiddleware.RequireRole("contractor_admin", "plant_admin", "ehs_manager", "tenant_admin", "super_admin")).Post("/", cfg.PermitHandler.CreatePermit)
+					pr.Get("/{id}", cfg.PermitHandler.GetPermit)
+					pr.With(customMiddleware.RequireRole("contractor_admin", "plant_admin", "ehs_manager", "tenant_admin", "super_admin")).Post("/{id}/workers", cfg.PermitHandler.AssignWorkers)
+					pr.With(customMiddleware.RequireRole("contractor_admin", "plant_admin", "ehs_manager", "tenant_admin", "super_admin")).Patch("/{id}/checklist", cfg.PermitHandler.UpdateChecklist)
+					pr.With(customMiddleware.RequireRole("ehs_manager", "plant_admin", "tenant_admin", "super_admin")).Post("/{id}/approve", cfg.PermitHandler.ApprovePermit)
+					pr.Post("/{id}/status", cfg.PermitHandler.TransitionStatus)
 				})
 			}
 		})

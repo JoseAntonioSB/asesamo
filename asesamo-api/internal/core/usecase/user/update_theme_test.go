@@ -37,6 +37,18 @@ func (m *mockUserRepo) UpdateThemePreference(ctx context.Context, id uuid.UUID, 
 	return nil
 }
 
+func (m *mockUserRepo) UpdateProfile(ctx context.Context, id uuid.UUID, fullName string, phone *string) error {
+	return nil
+}
+
+func (m *mockUserRepo) UpdateAvatar(ctx context.Context, id uuid.UUID, avatarKey string) error {
+	return nil
+}
+
+func (m *mockUserRepo) UpdatePassword(ctx context.Context, id uuid.UUID, passwordHash string) error {
+	return nil
+}
+
 func TestUpdateThemeUseCase_Success(t *testing.T) {
 	repo := &mockUserRepo{}
 	uc := user.NewUpdateThemeUseCase(repo)

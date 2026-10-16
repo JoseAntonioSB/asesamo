@@ -67,7 +67,7 @@ export function ScannerInput({ onScan, isLoading = false, disabled = false }: Sc
   };
 
   return (
-    <div className="w-full rounded-2xl border-2 border-slate-700 bg-slate-900/90 p-5 shadow-2xl backdrop-blur transition-all focus-within:border-emerald-500 focus-within:ring-4 focus-within:ring-emerald-500/20">
+    <div className="w-full rounded-2xl border-2 border-slate-700 bg-slate-900/90 p-5 shadow-2xl backdrop-blur transition-[border-color,box-shadow] duration-150 ease-out focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/40 focus-within:shadow-[0_0_24px_rgba(16,185,129,0.15)]">
       <div className="flex flex-col gap-3">
         {/* Label & Instructions */}
         <div className="flex items-center justify-between text-xs text-slate-400">
@@ -100,7 +100,7 @@ export function ScannerInput({ onScan, isLoading = false, disabled = false }: Sc
             onKeyDown={handleKeyDown}
             disabled={disabled || isLoading}
             placeholder="Escanee el código de barras o ingrese UUID del trabajador..."
-            className="w-full rounded-xl border border-slate-700 bg-slate-950/80 py-4 pl-14 pr-32 font-mono text-base sm:text-lg text-white placeholder-slate-500 outline-none transition-all focus:border-emerald-500 focus:bg-slate-950"
+            className="w-full rounded-xl border border-slate-700 bg-slate-950/80 py-4 pl-14 pr-32 font-mono text-base sm:text-lg text-white placeholder-slate-500 outline-none transition-[border-color,background-color] duration-150 ease-out focus:border-emerald-500 focus:bg-slate-950"
             autoComplete="off"
             autoCorrect="off"
             spellCheck="false"
@@ -126,7 +126,7 @@ export function ScannerInput({ onScan, isLoading = false, disabled = false }: Sc
               type="button"
               onClick={handleTriggerScan}
               disabled={!inputValue.trim() || isLoading || disabled}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg transition-all hover:bg-emerald-500 active:scale-95 disabled:pointer-events-none disabled:opacity-40 cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg transition-[transform,background-color,box-shadow] duration-150 ease-out hover:bg-emerald-500 active:scale-[0.97] disabled:pointer-events-none disabled:opacity-40 cursor-pointer"
             >
               {isLoading ? (
                 <>

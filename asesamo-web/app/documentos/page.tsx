@@ -67,16 +67,13 @@ function DocumentosContent() {
     setDocuments((prev) => [newDoc, ...prev]);
   };
 
-  const isGuardOrAdmin =
-    user?.role === 'guard' ||
+  const isGuard = user?.role === 'guard';
+  const isPlantAdmin =
     user?.role === 'plant_admin' ||
-    user?.role === 'super_admin' ||
-    user?.role === 'ehs_manager';
-
-  const isEhsOrAdmin =
-    user?.role === 'plant_admin' ||
-    user?.role === 'super_admin' ||
-    user?.role === 'ehs_manager';
+    user?.role === 'tenant_admin' ||
+    user?.role === 'super_admin';
+  const isEhsManager = user?.role === 'ehs_manager';
+  const isEhsOrAdmin = isPlantAdmin || isEhsManager;
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-emerald-500 selection:text-white">
@@ -101,7 +98,7 @@ function DocumentosContent() {
           </div>
 
           <div className="flex items-center gap-2 sm:gap-4">
-            {isGuardOrAdmin && (
+            {isGuard && (
               <Link href="/caseta">
                 <Button
                   size="sm"
@@ -110,6 +107,20 @@ function DocumentosContent() {
                 >
                   <ArrowLeft className="w-3.5 h-3.5" />
                   Volver a Caseta
+                </Button>
+              </Link>
+            )}
+
+            {isPlantAdmin && (
+              <Link href="/reportes">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="border-indigo-800/60 bg-indigo-950/40 text-indigo-300 hover:text-white hover:bg-indigo-900/60 text-xs gap-1.5"
+                  title="Panel de Reportes y Métricas STPS"
+                >
+                  <BarChart3 className="w-3.5 h-3.5 text-indigo-400" />
+                  <span className="hidden sm:inline">Panel Admin</span>
                 </Button>
               </Link>
             )}
@@ -151,27 +162,33 @@ function DocumentosContent() {
               </Button>
             </Link>
 
-            {isGuardOrAdmin && (
-              <Link href="/reportes">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="border-slate-700 text-indigo-300 hover:text-white hover:bg-slate-800 text-xs gap-1.5"
-                  title="Métricas y Reportes STPS"
-                >
-                  <BarChart3 className="w-3.5 h-3.5 text-indigo-400" />
-                  <span className="hidden sm:inline">Reportes</span>
-                </Button>
-              </Link>
-            )}
-
             {/* Theme Toggle */}
             <ThemeToggle />
 
-            <div className="hidden sm:block text-right">
-              <p className="text-xs font-medium text-white">{user?.full_name || user?.email}</p>
-              <p className="text-[11px] text-emerald-400 font-mono uppercase">{user?.role}</p>
-            </div>
+            {/* User Profile Pill */}
+            <Link
+              href="/perfil"
+              className="flex items-center gap-2 px-2.5 py-1 rounded-xl border border-slate-800 bg-slate-900 hover:bg-slate-800 hover:border-slate-700 transition-colors"
+              title="Ver Mi Perfil"
+            >
+              <div className="h-6 w-6 rounded-lg bg-slate-800 text-slate-200 font-bold text-[10px] flex items-center justify-center border border-slate-700 overflow-hidden relative">
+                {user?.id && (
+                  <img
+                    src={`/api/v1/users/${user.id}/avatar`}
+                    alt={user.full_name || 'Usuario'}
+                    className="w-full h-full object-cover absolute inset-0"
+                    onError={(e) => {
+                      (e.target as HTMLElement).style.display = 'none';
+                    }}
+                  />
+                )}
+                <span>{(user?.full_name || 'US').slice(0, 2).toUpperCase()}</span>
+              </div>
+              <div className="hidden sm:block text-left">
+                <p className="text-xs font-medium text-white leading-tight max-w-[120px] truncate">{user?.full_name || user?.email}</p>
+                <p className="text-[10px] text-emerald-400 font-mono uppercase leading-tight">{user?.role}</p>
+              </div>
+            </Link>
 
             <Button
               size="sm"

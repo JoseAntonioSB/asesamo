@@ -220,4 +220,49 @@ var (
 		Message:    "Tipo de documento no encontrado o no configurado.",
 		HTTPStatus: http.StatusNotFound,
 	}
+	ErrPermitNotFound = &AppError{
+		Code:       "PERMIT_NOT_FOUND",
+		Message:    "Permiso de trabajo no encontrado o no pertenece al tenant.",
+		HTTPStatus: http.StatusNotFound,
+	}
+	ErrPermitInvalidState = &AppError{
+		Code:       "PERMIT_INVALID_STATE",
+		Message:    "La transición de estado no es válida para el estatus actual del permiso.",
+		HTTPStatus: http.StatusUnprocessableEntity,
+	}
+	ErrChecklistIncomplete = &AppError{
+		Code:       "CHECKLIST_INCOMPLETE",
+		Message:    "No se puede autorizar el permiso: faltan verificaciones obligatorias en la lista de chequeo.",
+		HTTPStatus: http.StatusUnprocessableEntity,
+	}
+	ErrPermitNoWorkers = &AppError{
+		Code:       "PERMIT_NO_WORKERS",
+		Message:    "El permiso de trabajo debe contar con al menos un trabajador asignado.",
+		HTTPStatus: http.StatusUnprocessableEntity,
+	}
+	ErrCandadoComplianceFailed = &AppError{
+		Code:       "CANDADO_INTELIGENTE_BLOCKED",
+		Message:    "El trabajador no cumple con los requisitos de seguridad obligatorios.",
+		HTTPStatus: http.StatusUnprocessableEntity,
+	}
+	ErrWorkerMissingDC3 = &AppError{
+		Code:       "WORKER_MISSING_DC3",
+		Message:    "El trabajador no cuenta con constancia DC-3 vigente para el tipo de riesgo.",
+		HTTPStatus: http.StatusUnprocessableEntity,
+	}
+	ErrWorkerMissingMedical = &AppError{
+		Code:       "WORKER_MISSING_MEDICAL",
+		Message:    "El trabajador no cuenta con certificado médico de aptitud vigente.",
+		HTTPStatus: http.StatusUnprocessableEntity,
+	}
+	ErrContractorInactive = &AppError{
+		Code:       "CONTRACTOR_INACTIVE",
+		Message:    "La empresa contratista no se encuentra activa o está suspendida en esta planta.",
+		HTTPStatus: http.StatusForbidden,
+	}
+	ErrPermitTimeInvalid = &AppError{
+		Code:       "PERMIT_TIME_INVALID",
+		Message:    "La fecha y hora de fin debe ser posterior a la fecha y hora de inicio.",
+		HTTPStatus: http.StatusBadRequest,
+	}
 )

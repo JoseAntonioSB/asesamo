@@ -54,6 +54,21 @@ func (m *MockUserRepoForRouterTest) UpdateThemePreference(ctx context.Context, i
 	return args.Error(0)
 }
 
+func (m *MockUserRepoForRouterTest) UpdateProfile(ctx context.Context, id uuid.UUID, fullName string, phone *string) error {
+	args := m.Called(ctx, id, fullName, phone)
+	return args.Error(0)
+}
+
+func (m *MockUserRepoForRouterTest) UpdateAvatar(ctx context.Context, id uuid.UUID, avatarKey string) error {
+	args := m.Called(ctx, id, avatarKey)
+	return args.Error(0)
+}
+
+func (m *MockUserRepoForRouterTest) UpdatePassword(ctx context.Context, id uuid.UUID, passwordHash string) error {
+	args := m.Called(ctx, id, passwordHash)
+	return args.Error(0)
+}
+
 
 type MockAccessPointRepoForRouterTest struct {
 	mock.Mock

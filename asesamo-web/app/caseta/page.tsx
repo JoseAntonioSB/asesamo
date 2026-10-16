@@ -76,14 +76,22 @@ export default function CasetaPage() {
   const isEhsOrAdmin =
     user?.role === 'ehs_manager' ||
     user?.role === 'plant_admin' ||
+    user?.role === 'tenant_admin' ||
+    user?.role === 'contractor_admin' ||
     user?.role === 'super_admin';
 
-  // Guard auth check
+  // Auth and role routing check
   useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      router.replace('/login');
+    if (!authLoading) {
+      if (!isAuthenticated) {
+        router.replace('/login');
+      } else if (user?.role === 'worker') {
+        router.replace('/credencial');
+      } else if (user?.role === 'contractor_admin') {
+        router.replace('/contratistas');
+      }
     }
-  }, [authLoading, isAuthenticated, router]);
+  }, [authLoading, isAuthenticated, user, router]);
 
   // Clock interval
   useEffect(() => {
@@ -248,57 +256,35 @@ export default function CasetaPage() {
 
           {/* Right: Sound toggle, Guard Info & Logout */}
           <div className="flex items-center gap-2 sm:gap-3 w-full md:w-auto justify-end">
-            {/* Link to Documentos */}
-            <Link
-              href="/documentos"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
-              title="Ir al expediente de documentos"
-            >
-              <FileText className="h-3.5 w-3.5 text-emerald-400" />
-              <span className="hidden sm:inline">Documentos</span>
-            </Link>
-
-            {/* Link to Credencial Digital */}
-            <Link
-              href="/credencial"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-xs font-semibold text-cyan-300 hover:text-white hover:bg-slate-800 transition-colors"
-              title="Ver Credencial Móvil / QR del Trabajador"
-            >
-              <QrCode className="h-3.5 w-3.5 text-cyan-400" />
-              <span className="hidden sm:inline">Credencial</span>
-            </Link>
-
-            {/* Link to Contratistas */}
-            <Link
-              href="/contratistas"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
-              title="Padrón de Contratistas y Cuadrillas"
-            >
-              <Building className="h-3.5 w-3.5 text-blue-400" />
-              <span className="hidden sm:inline">Contratistas</span>
-            </Link>
-
-            {/* Link to Bandeja EHS (if EHS or Admin) */}
+            {/* Navigation for Admins / EHS inspecting Caseta */}
             {isEhsOrAdmin && (
-              <Link
-                href="/ehs/aprobaciones"
-                className="inline-flex items-center gap-1.5 rounded-lg border border-amber-800/60 bg-amber-950/30 px-3 py-2 text-xs font-semibold text-amber-300 hover:text-white hover:bg-amber-900/50 transition-colors"
-                title="Bandeja de Aprobación y Dictamen EHS"
-              >
-                <FileStack className="h-3.5 w-3.5 text-amber-400" />
-                <span className="hidden sm:inline">Bandeja EHS</span>
-              </Link>
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <Link
+                  href="/reportes"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-700/60 bg-indigo-950/40 px-3 py-1.5 text-xs font-semibold text-indigo-300 hover:text-white hover:bg-indigo-900/60 transition-colors"
+                  title="Panel Administrativo & Reportes"
+                >
+                  <BarChart3 className="h-3.5 w-3.5 text-indigo-400" />
+                  <span className="hidden sm:inline">Panel Admin</span>
+                </Link>
+                <Link
+                  href="/documentos"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
+                  title="Expediente Documental"
+                >
+                  <FileText className="h-3.5 w-3.5 text-emerald-400" />
+                  <span className="hidden sm:inline">Documentos</span>
+                </Link>
+                <Link
+                  href="/contratistas"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
+                  title="Padrón de Contratistas"
+                >
+                  <Building className="h-3.5 w-3.5 text-blue-400" />
+                  <span className="hidden sm:inline">Contratistas</span>
+                </Link>
+              </div>
             )}
-
-            {/* Link to Reportes & Auditoría STPS */}
-            <Link
-              href="/reportes"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-xs font-semibold text-indigo-300 hover:text-white hover:bg-slate-800 transition-colors"
-              title="Métricas, Auditoría STPS y Reportes"
-            >
-              <BarChart3 className="h-3.5 w-3.5 text-indigo-400" />
-              <span className="hidden sm:inline">Reportes</span>
-            </Link>
 
             {/* Audio chime toggle */}
             <button
@@ -314,15 +300,29 @@ export default function CasetaPage() {
             <ThemeToggle />
 
             {/* Guard Profile Badge */}
-            <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl border border-slate-800 bg-slate-900/80">
-              <div className="h-7 w-7 rounded-lg bg-slate-800 text-slate-200 font-bold text-xs flex items-center justify-center border border-slate-700">
-                {guardName.slice(0, 2).toUpperCase()}
+            <Link
+              href="/perfil"
+              className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl border border-slate-800 bg-slate-900/80 hover:bg-slate-800 hover:border-slate-700 transition-colors"
+              title="Ver Mi Perfil"
+            >
+              <div className="h-7 w-7 rounded-lg bg-slate-800 text-slate-200 font-bold text-xs flex items-center justify-center border border-slate-700 overflow-hidden relative">
+                {user?.id && (
+                  <img
+                    src={`/api/v1/users/${user.id}/avatar`}
+                    alt={guardName}
+                    className="w-full h-full object-cover absolute inset-0"
+                    onError={(e) => {
+                      (e.target as HTMLElement).style.display = 'none';
+                    }}
+                  />
+                )}
+                <span>{guardName.slice(0, 2).toUpperCase()}</span>
               </div>
               <div className="text-left hidden sm:block">
                 <p className="text-xs font-bold text-white leading-none">{guardName}</p>
-                <p className="text-[10px] text-slate-400 leading-tight">Guardia de Caseta</p>
+                <p className="text-[10px] text-slate-400 leading-tight">Mi Perfil</p>
               </div>
-            </div>
+            </Link>
 
             {/* Logout Button */}
             <button

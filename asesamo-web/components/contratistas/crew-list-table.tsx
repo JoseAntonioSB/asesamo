@@ -17,7 +17,10 @@ import {
   UserX,
   Loader2,
   ExternalLink,
+  Camera,
 } from 'lucide-react';
+import { apiClient } from '@/lib/api/client';
+import { WorkerPhotoModal } from './worker-photo-modal';
 
 interface CrewListTableProps {
   workers: ContractorWorkerItem[];
@@ -25,6 +28,7 @@ interface CrewListTableProps {
   onToggleStatus: (workerId: string, currentActive: boolean) => Promise<void>;
   canManageWorkers: boolean;
   contractorName?: string;
+  onRefresh?: () => void;
 }
 
 export function CrewListTable({
@@ -33,10 +37,13 @@ export function CrewListTable({
   onToggleStatus,
   canManageWorkers,
   contractorName,
+  onRefresh,
 }: CrewListTableProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [photoModalWorker, setPhotoModalWorker] = useState<ContractorWorkerItem | null>(null);
+  const [avatarRefreshKey, setAvatarRefreshKey] = useState<number>(Date.now());
 
   const filtered = workers.filter((w) => {
     const matchesSearch =
@@ -139,10 +146,39 @@ export function CrewListTable({
                     >
                       {/* Name & Account */}
                       <td className="px-4 py-3.5">
-                        <div className="flex items-start gap-2.5">
-                          <div className="p-2 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 mt-0.5">
-                            <HardHat className="w-4 h-4" />
-                          </div>
+                        <div className="flex items-center gap-3">
+                          <button
+                            type="button"
+                            onClick={() => canManageWorkers && setPhotoModalWorker(w)}
+                            disabled={!canManageWorkers}
+                            title={canManageWorkers ? 'Subir o cambiar fotografía del trabajador' : undefined}
+                            className={`relative group/avatar w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 overflow-hidden shrink-0 flex items-center justify-center font-bold text-xs text-white ${
+                              canManageWorkers ? 'hover:border-emerald-500 cursor-pointer' : 'cursor-default'
+                            }`}
+                          >
+                            <img
+                              src={`${apiClient.getUserAvatarUrl(w.worker_id)}?t=${avatarRefreshKey}`}
+                              alt={w.full_name}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                (e.target as HTMLElement).style.display = 'none';
+                              }}
+                            />
+                            <span className="text-[11px] font-black text-slate-300">
+                              {w.full_name
+                                .split(' ')
+                                .filter(Boolean)
+                                .slice(0, 2)
+                                .map((n) => n[0])
+                                .join('')
+                                .toUpperCase()}
+                            </span>
+                            {canManageWorkers && (
+                              <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-xs opacity-0 group-hover/avatar:opacity-100 flex items-center justify-center transition-opacity">
+                                <Camera className="w-4 h-4 text-emerald-400" />
+                              </div>
+                            )}
+                          </button>
                           <div>
                             <span className="font-semibold text-white group-hover:text-cyan-400 transition-colors block">
                               {w.full_name}
@@ -236,6 +272,20 @@ export function CrewListTable({
                             </Button>
                           </Link>
 
+                          {/* Subir / Actualizar Fotografía */}
+                          {canManageWorkers && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setPhotoModalWorker(w)}
+                              className="border-slate-700 text-slate-300 hover:text-emerald-300 hover:bg-slate-800 text-xs h-7 px-2 gap-1"
+                              title="Subir o cambiar fotografía del trabajador"
+                            >
+                              <Camera className="w-3 h-3 text-emerald-400" />
+                              <span className="hidden lg:inline">Foto</span>
+                            </Button>
+                          )}
+
                           {/* Toggle Active Switch */}
                           {canManageWorkers && (
                             <Button
@@ -275,6 +325,17 @@ export function CrewListTable({
           </table>
         </div>
       </div>
+
+      {/* Worker Photo Upload Modal */}
+      <WorkerPhotoModal
+        isOpen={!!photoModalWorker}
+        onClose={() => setPhotoModalWorker(null)}
+        worker={photoModalWorker}
+        onPhotoUploaded={(workerId) => {
+          setAvatarRefreshKey(Date.now());
+          onRefresh?.();
+        }}
+      />
     </div>
   );
 }

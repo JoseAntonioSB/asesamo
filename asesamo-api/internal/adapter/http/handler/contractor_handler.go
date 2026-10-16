@@ -197,8 +197,10 @@ func (h *ContractorHandler) AddWorker(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	tenantID, _ := tenant.FromContext(r.Context())
 	workerDetail, err := h.addWorkerUseCase.Execute(r.Context(), contractor.AddContractorWorkerInput{
 		ContractorID: contractorID,
+		TenantID:     tenantID,
 		FullName:     req.FullName,
 		Email:        req.Email,
 		Phone:        req.Phone,

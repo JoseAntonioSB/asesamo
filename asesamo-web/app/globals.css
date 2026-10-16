@@ -108,55 +108,113 @@
    LIGHT MODE INDUSTRIAL THEME (Administrative & Plant Management)
    ========================================================================== */
 html:not(.dark) body {
-  background-color: #f8fafc;
-  color: #0f172a;
-}
-
-/* Page containers & background surfaces */
-html:not(.dark) .min-h-screen.bg-slate-950,
-html:not(.dark) .bg-slate-950 {
   background-color: #f8fafc !important;
   color: #0f172a !important;
 }
 
-html:not(.dark) header.bg-slate-950\/90,
-html:not(.dark) header.bg-slate-900\/90,
-html:not(.dark) .bg-slate-900,
-html:not(.dark) .bg-slate-900\/90,
-html:not(.dark) .bg-slate-900\/80,
-html:not(.dark) .bg-slate-900\/50 {
+/* Page containers & deepest background surfaces (slate-950) */
+html:not(.dark) .min-h-screen,
+html:not(.dark) main,
+html:not(.dark) [class*="bg-slate-950"] {
+  background-color: #f8fafc !important;
+  color: #0f172a;
+}
+
+/* Elevated cards, panels, headers, dialogs & modals (slate-900) */
+html:not(.dark) header,
+html:not(.dark) [class*="bg-slate-900"] {
   background-color: #ffffff !important;
   border-color: #e2e8f0 !important;
 }
 
-html:not(.dark) .bg-slate-800,
-html:not(.dark) .bg-slate-800\/50,
-html:not(.dark) .bg-slate-800\/60,
-html:not(.dark) .bg-slate-800\/80 {
+/* Secondary surfaces, chips, table headers & pills (slate-800) */
+html:not(.dark) thead,
+html:not(.dark) [class*="bg-slate-800"] {
   background-color: #f1f5f9 !important;
   border-color: #cbd5e1 !important;
 }
 
-/* Borders */
-html:not(.dark) .border-slate-800,
-html:not(.dark) .border-slate-800\/60,
-html:not(.dark) .border-slate-700,
-html:not(.dark) .border-slate-700\/70,
-html:not(.dark) .border-slate-700\/80 {
+/* Table rows and list hover states */
+html:not(.dark) tr:hover,
+html:not(.dark) tr.hover\:bg-slate-800\/40:hover,
+html:not(.dark) [class*="hover:bg-slate-800"]:hover {
+  background-color: #f8fafc !important;
+}
+
+/* Precision dividing borders */
+html:not(.dark) [class*="border-slate-800"],
+html:not(.dark) [class*="border-slate-700"],
+html:not(.dark) [class*="border-slate-900"],
+html:not(.dark) [class*="border-slate-950"] {
   border-color: #e2e8f0 !important;
 }
 
-/* Text Hierarchy */
-html:not(.dark) .text-white {
-  color: #0f172a !important;
+/* Tinted dark containers & icon chips turn soft pastel in Light Mode */
+html:not(.dark) [class*="bg-emerald-950"] {
+  background-color: #ecfdf5 !important;
+  border-color: #a7f3d0 !important;
+}
+html:not(.dark) [class*="bg-amber-950"] {
+  background-color: #fffbeb !important;
+  border-color: #fde68a !important;
+}
+html:not(.dark) [class*="bg-rose-950"],
+html:not(.dark) [class*="bg-red-950"] {
+  background-color: #fef2f2 !important;
+  border-color: #fecaca !important;
+}
+html:not(.dark) [class*="bg-blue-950"],
+html:not(.dark) [class*="bg-indigo-950"] {
+  background-color: #eff6ff !important;
+  border-color: #bfdbfe !important;
 }
 
-html:not(.dark) .text-slate-100 {
-  color: #0f172a !important;
+html:not(.dark) [class*="border-emerald-900"],
+html:not(.dark) [class*="border-emerald-800"] {
+  border-color: #a7f3d0 !important;
+}
+html:not(.dark) [class*="border-amber-900"],
+html:not(.dark) [class*="border-amber-800"] {
+  border-color: #fde68a !important;
+}
+html:not(.dark) [class*="border-rose-900"],
+html:not(.dark) [class*="border-rose-800"],
+html:not(.dark) [class*="border-red-900"],
+html:not(.dark) [class*="border-red-800"] {
+  border-color: #fecaca !important;
 }
 
+/* High-contrast accessible text for accent colors in Light Mode */
+html:not(.dark) .text-emerald-300,
+html:not(.dark) .text-emerald-400 {
+  color: #059669 !important;
+}
+html:not(.dark) .text-amber-300,
+html:not(.dark) .text-amber-400 {
+  color: #d97706 !important;
+}
+html:not(.dark) .text-rose-300,
+html:not(.dark) .text-rose-400,
+html:not(.dark) .text-red-400 {
+  color: #dc2626 !important;
+}
+html:not(.dark) .text-blue-300,
+html:not(.dark) .text-blue-400 {
+  color: #2563eb !important;
+}
+html:not(.dark) .text-cyan-300,
+html:not(.dark) .text-cyan-400 {
+  color: #0891b2 !important;
+}
+html:not(.dark) .text-indigo-300,
+html:not(.dark) .text-indigo-400 {
+  color: #4f46e5 !important;
+}
+
+/* Typography Hierarchy in Light Mode */
+html:not(.dark) .text-slate-100,
 html:not(.dark) .text-slate-200 {
-  color: #1e293b !important;
+  color: #0f172a !important;
 }
 
 html:not(.dark) .text-slate-300 {
@@ -167,7 +225,16 @@ html:not(.dark) .text-slate-400 {
   color: #64748b !important;
 }
 
-/* Form controls in light mode */
+html:not(.dark) .text-slate-500 {
+  color: #64748b !important;
+}
+
+/* Convert text-white to dark text ONLY on light surfaces (not on buttons or colored chips) */
+html:not(.dark) .text-white {
+  color: #0f172a !important;
+}
+
+/* Form inputs & dropdown selects in light mode */
 html:not(.dark) input:not([type="checkbox"]):not([type="radio"]),
 html:not(.dark) select,
 html:not(.dark) textarea {
@@ -176,28 +243,114 @@ html:not(.dark) textarea {
   border-color: #cbd5e1 !important;
 }
 
+html:not(.dark) input:focus,
+html:not(.dark) select:focus,
+html:not(.dark) textarea:focus {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #10b981 !important;
+}
+
 html:not(.dark) input::placeholder,
 html:not(.dark) textarea::placeholder {
   color: #94a3b8 !important;
 }
 
-/* Preserve bright white text inside filled badges, action buttons, and status chips */
-html:not(.dark) button.bg-emerald-600,
-html:not(.dark) button.bg-emerald-500,
-html:not(.dark) button.bg-rose-600,
-html:not(.dark) button.bg-amber-500,
-html:not(.dark) .bg-emerald-600,
-html:not(.dark) .bg-emerald-500,
-html:not(.dark) .bg-rose-600,
-html:not(.dark) .bg-amber-600,
-html:not(.dark) .bg-emerald-600 *,
-html:not(.dark) .bg-emerald-500 *,
-html:not(.dark) .bg-rose-600 *,
-html:not(.dark) .bg-amber-600 * {
+/* Preserve crisp white text inside filled action buttons & solid colored pills */
+html:not(.dark) [class*="bg-emerald-600"],
+html:not(.dark) [class*="bg-indigo-600"],
+html:not(.dark) [class*="bg-blue-600"],
+html:not(.dark) [class*="bg-rose-600"],
+html:not(.dark) [class*="bg-red-600"],
+html:not(.dark) [class*="bg-amber-600"],
+html:not(.dark) [class*="bg-emerald-500"],
+html:not(.dark) [class*="bg-indigo-500"],
+html:not(.dark) [class*="bg-blue-500"],
+html:not(.dark) [class*="bg-rose-500"],
+html:not(.dark) [class*="bg-red-500"],
+html:not(.dark) [class*="bg-amber-500"],
+html:not(.dark) button.bg-primary,
+html:not(.dark) .bg-primary {
   color: #ffffff !important;
 }
 
-/* Secondary & ghost buttons hover states in light mode */
+html:not(.dark) [class*="bg-emerald-600"] *,
+html:not(.dark) [class*="bg-indigo-600"] *,
+html:not(.dark) [class*="bg-blue-600"] *,
+html:not(.dark) [class*="bg-rose-600"] *,
+html:not(.dark) [class*="bg-red-600"] *,
+html:not(.dark) [class*="bg-amber-600"] *,
+html:not(.dark) [class*="bg-emerald-500"] *,
+html:not(.dark) [class*="bg-indigo-500"] *,
+html:not(.dark) [class*="bg-blue-500"] *,
+html:not(.dark) [class*="bg-rose-500"] *,
+html:not(.dark) [class*="bg-red-500"] *,
+html:not(.dark) [class*="bg-amber-500"] *,
+html:not(.dark) button.bg-primary *,
+html:not(.dark) .bg-primary * {
+  color: #ffffff !important;
+}
+
+/* Status Banners in Light Mode (Tactile, High-Contrast Industrial Aesthetics) */
+html:not(.dark) [role="alert"][class*="border-emerald-500"] {
+  background: linear-gradient(to right, #ecfdf5, #ffffff, #ecfdf5) !important;
+  color: #064e3b !important;
+  border-color: #10b981 !important;
+  box-shadow: 0 10px 25px -5px rgba(16, 185, 129, 0.15) !important;
+}
+html:not(.dark) [role="alert"][class*="border-emerald-500"] h1 {
+  color: #065f46 !important;
+}
+html:not(.dark) [role="alert"][class*="border-emerald-500"] p,
+html:not(.dark) [role="alert"][class*="border-emerald-500"] span {
+  color: #047857 !important;
+}
+
+html:not(.dark) [role="alert"][class*="border-amber-500"] {
+  background: linear-gradient(to right, #fffbeb, #ffffff, #fffbeb) !important;
+  color: #78350f !important;
+  border-color: #f59e0b !important;
+  box-shadow: 0 10px 25px -5px rgba(245, 158, 11, 0.15) !important;
+}
+html:not(.dark) [role="alert"][class*="border-amber-500"] h1 {
+  color: #92400e !important;
+}
+html:not(.dark) [role="alert"][class*="border-amber-500"] p,
+html:not(.dark) [role="alert"][class*="border-amber-500"] div,
+html:not(.dark) [role="alert"][class*="border-amber-500"] span {
+  color: #b45309 !important;
+}
+
+html:not(.dark) [role="alert"][class*="border-red-500"] {
+  background: linear-gradient(to right, #fef2f2, #ffffff, #fef2f2) !important;
+  color: #7f1d1d !important;
+  border-color: #ef4444 !important;
+  box-shadow: 0 10px 25px -5px rgba(239, 68, 68, 0.15) !important;
+}
+html:not(.dark) [role="alert"][class*="border-red-500"] h1 {
+  color: #991b1b !important;
+}
+html:not(.dark) [role="alert"][class*="border-red-500"] p,
+html:not(.dark) [role="alert"][class*="border-red-500"] div,
+html:not(.dark) [role="alert"][class*="border-red-500"] span {
+  color: #b91c1c !important;
+}
+
+html:not(.dark) [role="alert"][class*="border-blue-500"] {
+  background: linear-gradient(to right, #eff6ff, #ffffff, #eff6ff) !important;
+  color: #1e3a8a !important;
+  border-color: #3b82f6 !important;
+  box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.15) !important;
+}
+html:not(.dark) [role="alert"][class*="border-blue-500"] h1 {
+  color: #1e40af !important;
+}
+html:not(.dark) [role="alert"][class*="border-blue-500"] p,
+html:not(.dark) [role="alert"][class*="border-blue-500"] span {
+  color: #2563eb !important;
+}
+
+/* Secondary & ghost button hover in light mode */
 html:not(.dark) button.hover\:bg-slate-800:hover,
 html:not(.dark) a.hover\:bg-slate-800:hover {
   background-color: #f1f5f9 !important;
@@ -239,10 +392,30 @@ html:not(.dark) ::-webkit-scrollbar-thumb:hover {
   background: hsl(217 33% 35%);
 }
 
-/* Physics-based Easing Tokens & Tactile Motion */
+/* Physics-based Easing Tokens & Tactile Motion (Emil Kowalski Design Engineering) */
 :root {
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
   --ease-out-industrial: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-in-out-industrial: cubic-bezier(0.77, 0, 0.175, 1);
+}
+
+/* Tactile press feedback */
+.pressable {
+  transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+.pressable:active {
+  transform: scale(0.97);
+}
+
+/* Reduced motion accessibility (safe fallback preserving state comprehension) */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* Industrial Audit & Official Inspection Print Stylesheet (NOM-STPS / Protección Civil) */

@@ -50,6 +50,7 @@ func (uc *ListContractorWorkersUseCase) Execute(ctx context.Context, contractorI
 // AddContractorWorkerInput defines inputs for registering a worker under a contractor company.
 type AddContractorWorkerInput struct {
 	ContractorID uuid.UUID
+	TenantID     uuid.UUID
 	FullName     string
 	Email        string
 	Phone        string
@@ -90,9 +91,19 @@ func (uc *AddContractorWorkerUseCase) Execute(ctx context.Context, in AddContrac
 	}
 
 	// Verify contractor exists
-	_, err := uc.contractorRepo.GetContractorByID(ctx, in.ContractorID)
+	contractor, err := uc.contractorRepo.GetContractorByID(ctx, in.ContractorID)
 	if err != nil {
 		return nil, err
+	}
+
+	// Resolve tenant: from input or from contractor's admin user
+	var tenantPtr *uuid.UUID
+	if in.TenantID != uuid.Nil {
+		tenantPtr = &in.TenantID
+	} else if contractor != nil && contractor.AdminUserID != nil {
+		if adminUser, err := uc.userRepo.GetByID(ctx, *contractor.AdminUserID); err == nil && adminUser != nil && adminUser.TenantID != nil {
+			tenantPtr = adminUser.TenantID
+		}
 	}
 
 	// Check if user already exists
@@ -110,7 +121,7 @@ func (uc *AddContractorWorkerUseCase) Execute(ctx context.Context, in AddContrac
 	workerID := uuid.New()
 	workerUser := &entity.User{
 		ID:           workerID,
-		TenantID:     nil, // workers are global to contractors
+		TenantID:     tenantPtr,
 		Email:        email,
 		FullName:     fullName,
 		Phone:        &in.Phone,

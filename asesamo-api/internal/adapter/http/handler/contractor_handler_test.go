@@ -182,6 +182,18 @@ func (m *handlerMockUserRepo) UpdateThemePreference(ctx context.Context, id uuid
 	return nil
 }
 
+func (m *handlerMockUserRepo) UpdateProfile(ctx context.Context, id uuid.UUID, fullName string, phone *string) error {
+	return nil
+}
+
+func (m *handlerMockUserRepo) UpdateAvatar(ctx context.Context, id uuid.UUID, avatarKey string) error {
+	return nil
+}
+
+func (m *handlerMockUserRepo) UpdatePassword(ctx context.Context, id uuid.UUID, passwordHash string) error {
+	return nil
+}
+
 // Plant repo mock for handler
 type handlerMockPlantRepo struct {
 	plants map[uuid.UUID]*entity.Plant

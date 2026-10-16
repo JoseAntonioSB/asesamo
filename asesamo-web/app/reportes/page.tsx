@@ -11,6 +11,7 @@ import {
   DailyAccessDistribution,
   RejectionReasonSummary,
   ContractorComplianceSummary,
+  AccessLogItem,
 } from '@/lib/api/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -37,6 +38,10 @@ import {
   CheckCircle2,
   XCircle,
   FileSpreadsheet,
+  DoorOpen,
+  History,
+  Copy,
+  Check,
 } from 'lucide-react';
 
 const DEFAULT_PLANT_ID = '22222222-2222-2222-2222-222222222222'; // Planta Querétaro Norte
@@ -45,15 +50,19 @@ type DatePreset = 'today' | '7d' | '30d' | 'month';
 
 function ReportesContent() {
   const { user, logout } = useAuth();
+  const isGuard = user?.role === 'guard';
 
   const [datePreset, setDatePreset] = useState<DatePreset>('30d');
   const [fromDate, setFromDate] = useState<string>('');
   const [toDate, setToDate] = useState<string>('');
   const [metricsData, setMetricsData] = useState<ReportMetricsResponse | null>(null);
+  const [accessLogs, setAccessLogs] = useState<AccessLogItem[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [isDownloadingAccess, setIsDownloadingAccess] = useState<boolean>(false);
   const [isDownloadingCompliance, setIsDownloadingCompliance] = useState<boolean>(false);
+  const [logResultFilter, setLogResultFilter] = useState<string>('all');
+  const [copiedLogId, setCopiedLogId] = useState<string | null>(null);
 
   // Initialize dates based on preset
   const applyPreset = useCallback((preset: DatePreset) => {
@@ -86,27 +95,46 @@ function ReportesContent() {
     applyPreset('30d');
   }, [applyPreset]);
 
-  // Load metrics from API
+  // Load metrics & live access logs from API
   const loadMetrics = useCallback(
     async (showToast = false) => {
       try {
         if (showToast) setIsRefreshing(true);
         else setIsLoading(true);
 
-        const data = await apiClient.getReportMetrics({
-          plant_id: DEFAULT_PLANT_ID,
-          from: fromDate || undefined,
-          to: toDate || undefined,
-        });
+        const [metrics, logsRes] = await Promise.allSettled([
+          apiClient.getReportMetrics({
+            plant_id: DEFAULT_PLANT_ID,
+            from: fromDate || undefined,
+            to: toDate || undefined,
+          }),
+          apiClient.getAccessLogs({
+            plant_id: DEFAULT_PLANT_ID,
+            from: fromDate || undefined,
+            to: toDate || undefined,
+            per_page: 50,
+          }),
+        ]);
 
-        setMetricsData(data);
-        if (showToast) {
-          toast.success('Métricas de auditoría actualizadas');
+        if (metrics.status === 'fulfilled') {
+          setMetricsData(metrics.value);
+        } else {
+          toast.error('Error al consultar métricas', {
+            description: 'No se pudieron recuperar los indicadores de acceso y auditoría.',
+          });
+        }
+
+        if (logsRes.status === 'fulfilled') {
+          setAccessLogs(logsRes.value.logs || []);
+        } else {
+          setAccessLogs([]);
+        }
+
+        if (showToast && metrics.status === 'fulfilled') {
+          toast.success('Métricas y bitácora de accesos actualizadas');
         }
       } catch {
-        toast.error('Error al consultar métricas', {
-          description: 'No se pudieron recuperar los indicadores de acceso y auditoría.',
-        });
+        toast.error('Error al actualizar datos');
       } finally {
         setIsLoading(false);
         setIsRefreshing(false);
@@ -120,6 +148,13 @@ function ReportesContent() {
       loadMetrics();
     }
   }, [fromDate, toDate, loadMetrics]);
+
+  const copyToClipboard = (text: string, id: string) => {
+    if (!text) return;
+    navigator.clipboard.writeText(text);
+    setCopiedLogId(id);
+    setTimeout(() => setCopiedLogId(null), 2000);
+  };
 
   // Download Access Logs CSV
   const handleDownloadAccessLogs = async () => {
@@ -213,16 +248,30 @@ function ReportesContent() {
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
-            <Link href="/caseta">
-              <Button
-                size="sm"
-                variant="outline"
-                className="border-slate-700 text-slate-300 hover:text-white hover:bg-slate-800 text-xs gap-1.5"
-              >
-                <ArrowLeft className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Caseta</span>
-              </Button>
-            </Link>
+            {isGuard ? (
+              <Link href="/caseta">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="border-slate-700 text-slate-300 hover:text-white hover:bg-slate-800 text-xs gap-1.5"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Volver a Caseta</span>
+                </Button>
+              </Link>
+            ) : (
+              <Link href="/caseta">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="border-slate-700 text-slate-300 hover:text-white hover:bg-slate-800 text-xs gap-1.5"
+                  title="Abrir terminal de Caseta de Vigilancia"
+                >
+                  <DoorOpen className="w-3.5 h-3.5 text-emerald-400" />
+                  <span className="hidden md:inline">Caseta</span>
+                </Button>
+              </Link>
+            )}
 
             <Link href="/contratistas">
               <Button
@@ -270,6 +319,30 @@ function ReportesContent() {
                 <QrCode className="w-3.5 h-3.5 text-cyan-400" />
                 <span className="hidden lg:inline">Mi Credencial</span>
               </Button>
+            </Link>
+
+            {/* User Profile Pill */}
+            <Link
+              href="/perfil"
+              className="flex items-center gap-2 px-2.5 py-1 rounded-xl border border-slate-800 bg-slate-900 hover:bg-slate-800 hover:border-slate-700 transition-colors"
+              title="Ver Mi Perfil"
+            >
+              <div className="h-6 w-6 rounded-lg bg-slate-800 text-slate-200 font-bold text-[10px] flex items-center justify-center border border-slate-700 overflow-hidden relative">
+                {user?.id && (
+                  <img
+                    src={`/api/v1/users/${user.id}/avatar`}
+                    alt={user.full_name || 'Usuario'}
+                    className="w-full h-full object-cover absolute inset-0"
+                    onError={(e) => {
+                      (e.target as HTMLElement).style.display = 'none';
+                    }}
+                  />
+                )}
+                <span>{(user?.full_name || 'US').slice(0, 2).toUpperCase()}</span>
+              </div>
+              <span className="text-xs font-semibold text-slate-200 hidden md:inline max-w-[120px] truncate">
+                {user?.full_name || 'Perfil'}
+              </span>
             </Link>
 
             {/* Theme Toggle */}
@@ -671,6 +744,216 @@ function ReportesContent() {
                       </tr>
                     );
                   })
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Section 4: Live Access Logs Table (Bitácora de Accesos en Vivo) */}
+        <div className="rounded-xl border border-slate-800 bg-slate-900/60 overflow-hidden shadow-lg backdrop-blur-sm space-y-4 p-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                <History className="w-4 h-4 text-emerald-400" />
+                <span>Bitácora de Accesos en Vivo (Auditoría NOM-STPS)</span>
+                <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
+                  {accessLogs.length} eventos
+                </span>
+              </h3>
+              <p className="text-[11px] text-slate-400">
+                Registro inmutable de entradas y salidas procesadas en torniquetes y puntos de acceso industrial.
+              </p>
+            </div>
+
+            {/* Filter pills */}
+            <div className="flex items-center gap-1.5 overflow-x-auto text-xs">
+              <button
+                type="button"
+                onClick={() => setLogResultFilter('all')}
+                className={`px-2.5 py-1 rounded-lg font-medium transition-colors cursor-pointer text-xs ${
+                  logResultFilter === 'all'
+                    ? 'bg-slate-800 text-white border border-slate-700'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                }`}
+              >
+                Todos ({accessLogs.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setLogResultFilter('granted')}
+                className={`px-2.5 py-1 rounded-lg font-medium transition-colors cursor-pointer text-xs flex items-center gap-1 ${
+                  logResultFilter === 'granted'
+                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                    : 'text-slate-400 hover:text-emerald-400 hover:bg-slate-800/60'
+                }`}
+              >
+                <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                Permitidos ({accessLogs.filter((l) => l.result === 'granted').length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setLogResultFilter('granted_with_warning')}
+                className={`px-2.5 py-1 rounded-lg font-medium transition-colors cursor-pointer text-xs flex items-center gap-1 ${
+                  logResultFilter === 'granted_with_warning'
+                    ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                    : 'text-slate-400 hover:text-amber-400 hover:bg-slate-800/60'
+                }`}
+              >
+                <AlertTriangle className="w-3 h-3 text-amber-400" />
+                Advertencias ({accessLogs.filter((l) => l.result === 'granted_with_warning').length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setLogResultFilter('denied')}
+                className={`px-2.5 py-1 rounded-lg font-medium transition-colors cursor-pointer text-xs flex items-center gap-1 ${
+                  logResultFilter === 'denied'
+                    ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                    : 'text-slate-400 hover:text-rose-400 hover:bg-slate-800/60'
+                }`}
+              >
+                <XCircle className="w-3 h-3 text-rose-400" />
+                Denegados ({accessLogs.filter((l) => l.result === 'denied').length})
+              </button>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs text-slate-300">
+              <thead className="bg-slate-950/80 text-[11px] font-semibold uppercase tracking-wider text-slate-400 border-b border-slate-800">
+                <tr>
+                  <th scope="col" className="px-4 py-3">Fecha y Hora</th>
+                  <th scope="col" className="px-4 py-3">ID Trabajador (UUID)</th>
+                  <th scope="col" className="px-4 py-3">Punto de Acceso</th>
+                  <th scope="col" className="px-4 py-3 text-center">Dictamen</th>
+                  <th scope="col" className="px-4 py-3 text-center">Permanencia</th>
+                  <th scope="col" className="px-4 py-3">Motivo / Observaciones</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800/80">
+                {isLoading ? (
+                  <tr>
+                    <td colSpan={6} className="px-4 py-8 text-center text-slate-400">
+                      <div className="flex items-center justify-center gap-2">
+                        <div className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+                        <span>Cargando bitácora de accesos...</span>
+                      </div>
+                    </td>
+                  </tr>
+                ) : accessLogs.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-4 py-8 text-center text-slate-500">
+                      No hay registros de acceso para el rango seleccionado.
+                    </td>
+                  </tr>
+                ) : (
+                  accessLogs
+                    .filter((log) => logResultFilter === 'all' || log.result === logResultFilter)
+                    .map((log) => {
+                      const isGranted = log.result === 'granted';
+                      const isWarning = log.result === 'granted_with_warning';
+                      const isDenied = log.result === 'denied';
+
+                      const dateStr = log.checked_in_at
+                        ? new Date(log.checked_in_at).toLocaleString('es-MX', {
+                            dateStyle: 'short',
+                            timeStyle: 'medium',
+                          })
+                        : '—';
+
+                      return (
+                        <tr key={log.id} className="hover:bg-slate-800/40 transition-colors">
+                          {/* Timestamp */}
+                          <td className="px-4 py-3 font-mono text-[11px] text-slate-300 whitespace-nowrap">
+                            <div className="flex items-center gap-1.5">
+                              <Clock className="w-3.5 h-3.5 text-slate-400" />
+                              <span>{dateStr}</span>
+                            </div>
+                          </td>
+
+                          {/* Worker User ID */}
+                          <td className="px-4 py-3 font-mono text-[11px]">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-slate-200">
+                                ...{log.user_id ? log.user_id.slice(-12) : '—'}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => copyToClipboard(log.user_id, log.id)}
+                                className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+                                title="Copiar UUID"
+                              >
+                                {copiedLogId === log.id ? (
+                                  <Check className="w-3 h-3 text-emerald-400" />
+                                ) : (
+                                  <Copy className="w-3 h-3" />
+                                )}
+                              </button>
+                            </div>
+                          </td>
+
+                          {/* Access Point */}
+                          <td className="px-4 py-3 font-mono text-[11px] text-slate-400 whitespace-nowrap">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-slate-800/60 border border-slate-700/60 text-slate-300">
+                              <DoorOpen className="w-3 h-3 text-slate-400" />
+                              {log.access_point_id ? `...${log.access_point_id.slice(-8)}` : 'Torniquete'}
+                            </span>
+                          </td>
+
+                          {/* Result */}
+                          <td className="px-4 py-3 text-center whitespace-nowrap">
+                            {isGranted && (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                <CheckCircle2 className="w-3 h-3" />
+                                Permitido
+                              </span>
+                            )}
+                            {isWarning && (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                                <AlertTriangle className="w-3 h-3" />
+                                Advertencia
+                              </span>
+                            )}
+                            {isDenied && (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20">
+                                <XCircle className="w-3 h-3" />
+                                Denegado
+                              </span>
+                            )}
+                          </td>
+
+                          {/* Permanence / Check-out */}
+                          <td className="px-4 py-3 text-center whitespace-nowrap font-mono text-[11px]">
+                            {log.checked_out_at ? (
+                              <span className="inline-flex items-center gap-1 text-slate-400">
+                                Salida: {new Date(log.checked_out_at).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 text-[10px] font-semibold">
+                                <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+                                En Planta
+                              </span>
+                            )}
+                          </td>
+
+                          {/* Denial Reason / Notes */}
+                          <td className="px-4 py-3 text-xs">
+                            {log.denial_reason ? (
+                              <span className="text-rose-400 font-medium">
+                                {log.denial_reason}
+                              </span>
+                            ) : log.notes ? (
+                              <span className="text-slate-300 italic">{log.notes}</span>
+                            ) : (
+                              <span className="text-emerald-400/90 flex items-center gap-1">
+                                <ShieldCheck className="w-3 h-3" />
+                                Documentación 100% conforme
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })
                 )}
               </tbody>
             </table>

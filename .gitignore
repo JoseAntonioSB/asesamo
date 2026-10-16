@@ -79,3 +79,4 @@ scratch/
 .agents/task/
 .agents/*.log
 .agent/
+.agents/skills/

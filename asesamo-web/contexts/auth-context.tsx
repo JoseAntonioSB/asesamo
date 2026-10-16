@@ -9,7 +9,7 @@ import React, { createContext, useContext, useEffect, useState, useCallback } fr
 import { useRouter } from 'next/navigation';
 import { UserProfile, LoginResponseData } from '@/lib/api/types';
 import { apiClient } from '@/lib/api/client';
-import { getStoredToken, getStoredUser, clearAuthSession } from '@/lib/auth';
+import { getStoredToken, getStoredUser, setStoredUser, clearAuthSession } from '@/lib/auth';
 
 interface AuthContextType {
   user: UserProfile | null;
@@ -18,6 +18,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, pass: string) => Promise<LoginResponseData>;
   logout: () => void;
+  updateUserSession: (updated: Partial<UserProfile>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -62,6 +63,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     router.push('/login');
   }, [router]);
 
+  const updateUserSession = useCallback((updated: Partial<UserProfile>) => {
+    setUser((prev) => {
+      if (!prev) return null;
+      const nextUser = { ...prev, ...updated };
+      setStoredUser(nextUser);
+      return nextUser;
+    });
+  }, []);
+
   return (
     <AuthContext.Provider
       value={{
@@ -71,6 +81,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isLoading,
         login: handleLogin,
         logout: handleLogout,
+        updateUserSession,
       }}
     >
       {children}

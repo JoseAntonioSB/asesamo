@@ -50,6 +50,9 @@ RUN addgroup -g 10001 -S asesamo && \
 
 WORKDIR /app
 
+# Ensure storage upload directory exists and is owned by unprivileged user
+RUN mkdir -p /app/uploads && chown -R asesamo:asesamo /app
+
 # Copy binary from builder stage with strict ownership
 COPY --from=builder --chown=asesamo:asesamo /bin/api /bin/api
 

@@ -43,6 +43,21 @@ func (m *mockUserRepo) UpdateThemePreference(ctx context.Context, id uuid.UUID, 
 	return args.Error(0)
 }
 
+func (m *mockUserRepo) UpdateProfile(ctx context.Context, id uuid.UUID, fullName string, phone *string) error {
+	args := m.Called(ctx, id, fullName, phone)
+	return args.Error(0)
+}
+
+func (m *mockUserRepo) UpdateAvatar(ctx context.Context, id uuid.UUID, avatarKey string) error {
+	args := m.Called(ctx, id, avatarKey)
+	return args.Error(0)
+}
+
+func (m *mockUserRepo) UpdatePassword(ctx context.Context, id uuid.UUID, passwordHash string) error {
+	args := m.Called(ctx, id, passwordHash)
+	return args.Error(0)
+}
+
 type mockPlantRepo struct{ mock.Mock }
 
 func (m *mockPlantRepo) GetByID(ctx context.Context, id uuid.UUID) (*entity.Plant, error) {
