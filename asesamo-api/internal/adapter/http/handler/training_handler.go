@@ -184,6 +184,30 @@ func (h *TrainingHandler) ListCertificates(w http.ResponseWriter, r *http.Reques
 	json.NewEncoder(w).Encode(map[string]interface{}{"data": certs})
 }
 
+func (h *TrainingHandler) GetCertificate(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := tenant.FromContext(r.Context())
+	if err != nil {
+		http.Error(w, `{"error":"No se encontró información del tenant"}`, http.StatusUnauthorized)
+		return
+	}
+
+	certIDStr := chi.URLParam(r, "id")
+	certUUID, err := uuid.Parse(certIDStr)
+	if err != nil {
+		http.Error(w, `{"error":"ID de constancia inválido"}`, http.StatusBadRequest)
+		return
+	}
+
+	cert, err := h.repo.GetCertificateByID(r.Context(), tenantID, certUUID)
+	if err != nil || cert == nil {
+		http.Error(w, `{"error":"Constancia no encontrada"}`, http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{"data": cert})
+}
+
 func (h *TrainingHandler) ListWorkerCertificates(w http.ResponseWriter, r *http.Request) {
 	tenantID, err := tenant.FromContext(r.Context())
 	if err != nil {

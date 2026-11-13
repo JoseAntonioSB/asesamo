@@ -22,6 +22,7 @@ import {
   Flame,
   Activity,
   ArrowRight,
+  Printer,
 } from 'lucide-react';
 
 function EvacuacionDashboardContent() {
@@ -241,14 +242,26 @@ function EvacuacionDashboardContent() {
                 </p>
               </div>
 
-              <Button
-                onClick={handleStartEvacuation}
-                disabled={isTriggering}
-                className="bg-red-600 hover:bg-red-500 text-white font-bold px-6 py-3 rounded-xl shadow-lg shadow-red-950/50 gap-2 cursor-pointer"
-              >
-                <Siren className="w-4 h-4 animate-bounce" />
-                {isTriggering ? 'Iniciando...' : 'Activar Alarma de Evacuación / Simulacro'}
-              </Button>
+              <div className="flex flex-wrap items-center gap-3">
+                <Link href="/evacuacion/acta" target="_blank">
+                  <Button
+                    variant="outline"
+                    className="border-zinc-700 text-zinc-300 hover:text-white hover:bg-zinc-800 gap-2 font-bold px-4 py-3 rounded-xl cursor-pointer"
+                  >
+                    <Printer className="w-4 h-4 text-zinc-400" />
+                    <span>Acta Oficial / PDF</span>
+                  </Button>
+                </Link>
+
+                <Button
+                  onClick={handleStartEvacuation}
+                  disabled={isTriggering}
+                  className="bg-red-600 hover:bg-red-500 text-white font-bold px-6 py-3 rounded-xl shadow-lg shadow-red-950/50 gap-2 cursor-pointer"
+                >
+                  <Siren className="w-4 h-4 animate-bounce" />
+                  {isTriggering ? 'Iniciando...' : 'Activar Alarma de Evacuación / Simulacro'}
+                </Button>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-zinc-800/80">

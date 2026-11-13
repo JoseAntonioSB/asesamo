@@ -21,6 +21,7 @@ import {
   FileText,
   Clock,
   Sparkles,
+  Printer,
 } from 'lucide-react';
 
 function CapacitacionDashboardContent() {
@@ -238,12 +239,13 @@ function CapacitacionDashboardContent() {
                     <th className="py-3 px-4">Vigencia</th>
                     <th className="py-3 px-4">Calificación</th>
                     <th className="py-3 px-4">Estatus</th>
+                    <th className="py-3 px-4 text-right">Formato Oficial</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-800/60 font-mono text-zinc-300">
                   {certificates.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="py-8 text-center text-zinc-500 font-sans">
+                      <td colSpan={9} className="py-8 text-center text-zinc-500 font-sans">
                         No hay constancias DC-3 emitidas registradas.
                       </td>
                     </tr>
@@ -272,6 +274,16 @@ function CapacitacionDashboardContent() {
                           <span className="px-2.5 py-1 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                             VIGENTE STPS
                           </span>
+                        </td>
+                        <td className="py-3.5 px-4 text-right">
+                          <Link
+                            href={`/capacitacion/dc3/${cert.id}/imprimir`}
+                            target="_blank"
+                            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-zinc-800 text-indigo-400 hover:text-white hover:bg-indigo-600 text-xs font-semibold border border-zinc-700 transition-colors"
+                          >
+                            <Printer className="w-3.5 h-3.5" />
+                            <span>Imprimir DC-3</span>
+                          </Link>
                         </td>
                       </tr>
                     ))

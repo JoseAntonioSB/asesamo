@@ -33,6 +33,7 @@ import (
 	"asesamo-api/internal/core/usecase/worker"
 	"asesamo-api/internal/infra/config"
 	"asesamo-api/internal/infra/database"
+	"asesamo-api/internal/infra/notification"
 	"asesamo-api/internal/infra/realtime"
 )
 
@@ -144,6 +145,13 @@ func main() {
 	accessHandler := handler.NewAccessHandler(checkInUseCase, checkOutUseCase, listAccessLogsUseCase)
 	docHandler := handler.NewDocumentHandler(uploadDocUseCase, listMyDocsUseCase, downloadDocUseCase, listDocTypesUseCase)
 	docHandler.SetReviewUseCases(reviewDocUseCase, listPendingDocsUseCase)
+	notificationService := notification.NewService(
+		notification.NewMockEmailSender(),
+		notification.NewHTTPWebhookSender(5*time.Second),
+		"",
+		"",
+	)
+	docHandler.SetNotificationDispatcher(notificationService)
 	userHandler := handler.NewUserHandler(
 		getProfileUseCase,
 		updateProfileUseCase,

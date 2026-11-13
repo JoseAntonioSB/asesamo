@@ -33,6 +33,7 @@ import {
   Lock,
   Ban,
   Calendar,
+  Printer,
 } from 'lucide-react';
 
 function PermitDetailContent() {
@@ -246,6 +247,18 @@ function PermitDetailContent() {
                 <span>Cancelar</span>
               </Button>
             )}
+
+            {/* Print PTAR Button */}
+            <Link href={`/permisos/${permit.id}/imprimir`} target="_blank">
+              <Button
+                variant="outline"
+                size="sm"
+                className="border-slate-800 text-slate-300 hover:text-white hover:bg-slate-800 gap-1.5 text-xs"
+              >
+                <Printer className="w-3.5 h-3.5" />
+                <span>Imprimir PTAR</span>
+              </Button>
+            </Link>
           </div>
         </div>
 

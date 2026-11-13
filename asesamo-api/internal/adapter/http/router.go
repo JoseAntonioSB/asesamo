@@ -204,6 +204,7 @@ func NewRouter(cfg RouterConfig) http.Handler {
 					tr.Get("/courses", cfg.TrainingHandler.ListCourses)
 					tr.Post("/courses", cfg.TrainingHandler.CreateCourse)
 					tr.Get("/dc3", cfg.TrainingHandler.ListCertificates)
+					tr.Get("/dc3/{id}", cfg.TrainingHandler.GetCertificate)
 					tr.Post("/dc3", cfg.TrainingHandler.IssueDC3)
 					tr.Get("/workers/{workerId}/dc3", cfg.TrainingHandler.ListWorkerCertificates)
 				})

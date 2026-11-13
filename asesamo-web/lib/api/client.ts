@@ -1118,6 +1118,14 @@ export class ApiClient {
     return res.data || [];
   }
 
+  /**
+   * GET /api/v1/training/dc3/:id
+   */
+  public async getTrainingCertificate(id: string): Promise<TrainingCertificateDto> {
+    const res = await this.request<TrainingCertificateDto>(`/training/dc3/${encodeURIComponent(id)}`);
+    return res.data;
+  }
+
   // ---------------------------------------------------------------------------
   // Occupational Health & Medical Exams (NOM-030-STPS)
   // ---------------------------------------------------------------------------

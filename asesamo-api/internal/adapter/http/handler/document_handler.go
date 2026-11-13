@@ -2,6 +2,7 @@ package handler
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -15,6 +16,7 @@ import (
 	"asesamo-api/internal/adapter/storage"
 	domainErrors "asesamo-api/internal/core/domain/errors"
 	usecaseDoc "asesamo-api/internal/core/usecase/document"
+	"asesamo-api/internal/infra/notification"
 	"asesamo-api/pkg/tenant"
 
 	"github.com/go-chi/chi/v5"
@@ -29,6 +31,7 @@ type DocumentHandler struct {
 	listTypesUC   *usecaseDoc.ListDocumentTypesUseCase
 	reviewUC      *usecaseDoc.ReviewDocumentUseCase
 	listPendingUC *usecaseDoc.ListPendingDocumentsUseCase
+	dispatcher    notification.Dispatcher
 }
 
 // NewDocumentHandler constructs a new DocumentHandler.
@@ -50,6 +53,11 @@ func NewDocumentHandler(
 func (h *DocumentHandler) SetReviewUseCases(reviewUC *usecaseDoc.ReviewDocumentUseCase, listPendingUC *usecaseDoc.ListPendingDocumentsUseCase) {
 	h.reviewUC = reviewUC
 	h.listPendingUC = listPendingUC
+}
+
+// SetNotificationDispatcher attaches a notification dispatcher.
+func (h *DocumentHandler) SetNotificationDispatcher(dispatcher notification.Dispatcher) {
+	h.dispatcher = dispatcher
 }
 
 // SetListTypesUseCase attaches the document types catalog use case.
@@ -360,6 +368,19 @@ func (h *DocumentHandler) Review(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		dto.WriteError(w, err)
 		return
+	}
+
+	if h.dispatcher != nil && req.Action == "reject" {
+		go func() {
+			_ = h.dispatcher.NotifyDocumentRejection(
+				context.Background(),
+				"contratista@empresa.com",
+				"Empresa Contratista",
+				"Documento Cumplimiento",
+				"",
+				req.RejectionReason,
+			)
+		}()
 	}
 
 	dto.WriteSuccess(w, http.StatusOK, dto.ToDocumentResponse(updatedDoc))
