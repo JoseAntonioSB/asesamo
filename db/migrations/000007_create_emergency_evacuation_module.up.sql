@@ -55,7 +55,7 @@ CREATE TABLE emergency_evacuations (
 CREATE TABLE evacuation_roll_call (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     evacuation_id UUID NOT NULL REFERENCES emergency_evacuations(id) ON DELETE CASCADE,
-    worker_id UUID NOT NULL REFERENCES workers(id) ON DELETE RESTRICT,
+    worker_id UUID NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
     muster_point_id UUID REFERENCES muster_points(id) ON DELETE SET NULL,
     status roll_call_status NOT NULL DEFAULT 'missing',
     checked_in_at TIMESTAMP WITH TIME ZONE,

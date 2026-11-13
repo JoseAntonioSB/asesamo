@@ -40,7 +40,7 @@ CREATE TABLE epp_deliveries (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE RESTRICT,
     epp_item_id UUID NOT NULL REFERENCES epp_catalog(id) ON DELETE RESTRICT,
-    worker_id UUID NOT NULL REFERENCES workers(id) ON DELETE RESTRICT,
+    worker_id UUID NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
     contractor_id UUID REFERENCES contractors(id) ON DELETE SET NULL,
     delivery_date DATE NOT NULL,
     expiration_date DATE NOT NULL,

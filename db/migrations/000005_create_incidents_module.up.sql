@@ -40,7 +40,7 @@ CREATE TABLE safety_incidents (
     event_timestamp TIMESTAMP WITH TIME ZONE NOT NULL,
     
     reported_by_user_id UUID NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
-    involved_worker_id UUID REFERENCES workers(id) ON DELETE SET NULL,
+    involved_worker_id UUID REFERENCES users(id) ON DELETE SET NULL,
     contractor_id UUID REFERENCES contractors(id) ON DELETE SET NULL,
     
     days_lost INTEGER NOT NULL DEFAULT 0,

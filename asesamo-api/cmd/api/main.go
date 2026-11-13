@@ -21,6 +21,10 @@ import (
 	"asesamo-api/internal/core/usecase/auth"
 	"asesamo-api/internal/core/usecase/contractor"
 	"asesamo-api/internal/core/usecase/document"
+	"asesamo-api/internal/core/usecase/epp"
+	"asesamo-api/internal/core/usecase/evacuation"
+	"asesamo-api/internal/core/usecase/incident"
+	"asesamo-api/internal/core/usecase/inspection"
 	"asesamo-api/internal/core/usecase/permit"
 	"asesamo-api/internal/core/usecase/report"
 	"asesamo-api/internal/core/usecase/user"
@@ -63,6 +67,10 @@ func main() {
 	contractorRepo := postgres.NewContractorRepository(db.DB)
 	reportRepo := postgres.NewReportRepository(db.DB)
 	permitRepo := postgres.NewWorkPermitRepository(db.DB)
+	inspectionRepo := postgres.NewSafetyInspectionRepository(db.DB)
+	incidentRepo := postgres.NewSafetyIncidentRepository(db.DB)
+	eppRepo := postgres.NewEPPRepository(db.DB)
+	evacuationRepo := postgres.NewEmergencyEvacuationRepository(db.DB)
 
 	complianceEngine := service.NewComplianceEngine(complianceRepo)
 
@@ -114,6 +122,12 @@ func main() {
 	approvePermitUseCase := permit.NewApprovePermitUseCase(permitRepo, complianceEngine)
 	transitionStatusUseCase := permit.NewTransitionStatusUseCase(permitRepo)
 
+	// Operational Safety Use Cases (Milestone 3)
+	completeInspectionUseCase := inspection.NewCompleteInspectionUseCase(inspectionRepo)
+	reportIncidentUseCase := incident.NewReportIncidentUseCase(incidentRepo)
+	deliverEPPUseCase := epp.NewDeliverEPPUseCase(eppRepo)
+	startEvacuationUseCase := evacuation.NewStartEvacuationUseCase(evacuationRepo)
+
 	// Handlers (inbound adapters)
 	healthHandler := handler.NewHealthHandler(db, "1.0.0")
 	authHandler := handler.NewAuthHandler(loginUseCase)
@@ -148,6 +162,10 @@ func main() {
 		approvePermitUseCase,
 		transitionStatusUseCase,
 	)
+	inspectionHandler := handler.NewInspectionHandler(inspectionRepo, completeInspectionUseCase)
+	incidentHandler := handler.NewIncidentHandler(incidentRepo, reportIncidentUseCase)
+	eppHandler := handler.NewEPPHandler(eppRepo, deliverEPPUseCase)
+	evacuationHandler := handler.NewEvacuationHandler(evacuationRepo, startEvacuationUseCase)
 
 	loginLimit := 100
 	if cfg.AppEnv == config.EnvProduction {
@@ -166,6 +184,10 @@ func main() {
 		ContractorHandler:  contractorHandler,
 		ReportHandler:      reportHandler,
 		PermitHandler:      permitHandler,
+		InspectionHandler:  inspectionHandler,
+		IncidentHandler:    incidentHandler,
+		EPPHandler:         eppHandler,
+		EvacuationHandler:  evacuationHandler,
 		JWTSecret:          cfg.JWTSecret,
 		CORSOrigins:        cfg.CORSAllowedOrigins,
 		LoginRateLimit:     loginLimit,
