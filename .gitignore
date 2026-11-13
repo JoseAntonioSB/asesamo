@@ -59,9 +59,11 @@ coverage.txt
 *.sublime-project
 *.sublime-workspace
 
-# Test Coverage
+# Test Coverage & E2E Reports
 coverage/
 .nyc_output/
+playwright-report/
+test-results/
 
 # File Storage & Uploads (Local development volume at root)
 /uploads/
