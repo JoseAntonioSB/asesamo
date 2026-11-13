@@ -622,5 +622,44 @@ export interface PermitFilterParams {
   per_page?: number;
 }
 
+// ---------------------------------------------------------------------------
+// Safety Inspections & EHS Audits Types (TDD)
+// ---------------------------------------------------------------------------
+export type InspectionType = 'routine' | 'planned' | 'special' | 'regulatory';
+export type InspectionStatus = 'draft' | 'in_progress' | 'completed' | 'requires_capa' | 'cancelled';
+export type ItemComplianceStatus = 'compliant' | 'non_compliant' | 'not_applicable';
+export type FindingSeverity = 'low' | 'medium' | 'high' | 'critical';
+export type CAPAStatus = 'open' | 'in_progress' | 'resolved' | 'verified' | 'overdue';
+
+export interface InspectionAnswerPayload {
+  template_item_id: string;
+  status: ItemComplianceStatus;
+  finding_notes?: string;
+  evidence_photo_url?: string;
+}
+
+export interface CompleteInspectionInput {
+  answers: InspectionAnswerPayload[];
+}
+
+export interface InspectionActionPlanDto {
+  id: string;
+  description: string;
+  severity: FindingSeverity;
+  status: CAPAStatus;
+  due_date: string;
+  assigned_to_user_id?: string;
+  contractor_id?: string;
+}
+
+export interface CompleteInspectionResult {
+  inspection_id: string;
+  score_percentage: number;
+  status: InspectionStatus;
+  requires_capa: boolean;
+  generated_capas: InspectionActionPlanDto[];
+}
+
+
 
 

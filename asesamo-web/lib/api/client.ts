@@ -45,6 +45,8 @@ import {
   ApprovePermitPayload,
   TransitionPermitStatusPayload,
   PermitFilterParams,
+  CompleteInspectionInput,
+  CompleteInspectionResult,
 } from './types';
 import { getStoredToken, setStoredToken, setStoredUser, clearAuthSession } from '../auth';
 
@@ -881,6 +883,24 @@ export class ApiClient {
       method: 'POST',
       body: JSON.stringify(payload),
     });
+    return res.data;
+  }
+
+  /**
+   * POST /api/v1/inspections/:id/complete
+   * Submits answers for a field safety inspection and calculates score & CAPA actions.
+   */
+  public async completeInspection(
+    inspectionId: string,
+    payload: CompleteInspectionInput
+  ): Promise<CompleteInspectionResult> {
+    const res = await this.request<CompleteInspectionResult>(
+      `/inspections/${encodeURIComponent(inspectionId)}/complete`,
+      {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }
+    );
     return res.data;
   }
 
