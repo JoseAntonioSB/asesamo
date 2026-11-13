@@ -864,6 +864,154 @@ export interface CompleteInspectionResult {
   generated_capas: InspectionActionPlanDto[];
 }
 
+// ---------------------------------------------------------------------------
+// Training & STPS DC-3 Types
+// ---------------------------------------------------------------------------
+export type CourseThematicArea = 'safety' | 'technical' | 'environmental' | 'administrative' | 'specialized';
+export type CertificateStatus = 'draft' | 'issued' | 'revoked' | 'expired';
+
+export interface TrainingCourseDto {
+  id: string;
+  tenant_id: string;
+  code: string;
+  title: string;
+  description?: string;
+  thematic_area: CourseThematicArea;
+  stps_thematic_code: string;
+  duration_hours: number;
+  validity_years: number;
+  normative_reference?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateTrainingCoursePayload {
+  code: string;
+  title: string;
+  description?: string;
+  thematic_area: CourseThematicArea;
+  stps_thematic_code: string;
+  duration_hours: number;
+  validity_years: number;
+  normative_reference?: string;
+}
+
+export interface TrainingCertificateDto {
+  id: string;
+  tenant_id: string;
+  session_id?: string;
+  course_id: string;
+  worker_id: string;
+  contractor_id?: string;
+  folio_number: string;
+  status: CertificateStatus;
+  worker_occupation_code: string;
+  worker_curp: string;
+  worker_full_name: string;
+  company_name: string;
+  company_rfc: string;
+  legal_rep_name: string;
+  worker_rep_name: string;
+  instructor_name: string;
+  issue_date: string;
+  expiration_date: string;
+  score_percentage: number;
+  digital_signature_token?: string;
+  document_r2_key?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface IssueDC3Payload {
+  course_id: string;
+  worker_id: string;
+  contractor_id?: string;
+  worker_curp: string;
+  worker_full_name: string;
+  occupation_code?: string;
+  company_name: string;
+  company_rfc: string;
+  legal_rep_name: string;
+  worker_rep_name: string;
+  instructor_name: string;
+  issue_date?: string;
+  score: number;
+}
+
+// ---------------------------------------------------------------------------
+// Occupational Health Types (NOM-030-STPS)
+// ---------------------------------------------------------------------------
+export type MedicalFitnessStatus = 'fit' | 'fit_with_restrictions' | 'unfit_temporary' | 'unfit_permanent';
+export type MedicalExamType = 'pre_placement' | 'periodic_annual' | 'height_clearance' | 'confined_space' | 'post_incident' | 'antidoping';
+
+export interface WorkerMedicalProfileDto {
+  id: string;
+  tenant_id: string;
+  worker_id: string;
+  blood_type: string;
+  allergies?: string;
+  chronic_conditions?: string;
+  emergency_contact_name: string;
+  emergency_contact_phone: string;
+  emergency_contact_relationship: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UpsertMedicalProfilePayload {
+  blood_type: string;
+  allergies?: string;
+  chronic_conditions?: string;
+  emergency_contact_name: string;
+  emergency_contact_phone: string;
+  emergency_contact_relationship: string;
+}
+
+export interface OccupationalMedicalExamDto {
+  id: string;
+  tenant_id: string;
+  worker_id: string;
+  contractor_id?: string;
+  exam_number: string;
+  exam_type: MedicalExamType;
+  fitness_status: MedicalFitnessStatus;
+  exam_date: string;
+  expiration_date: string;
+  doctor_name: string;
+  doctor_license: string;
+  clinic_or_institution: string;
+  restrictions_notes?: string;
+  recommendations?: string;
+  visual_acuity_result?: string;
+  audiometry_result?: string;
+  spirometry_result?: string;
+  antidoping_result?: string;
+  blood_pressure?: string;
+  certificate_r2_key?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface RecordMedicalExamPayload {
+  worker_id: string;
+  contractor_id?: string;
+  exam_type: MedicalExamType;
+  fitness_status: MedicalFitnessStatus;
+  exam_date: string;
+  doctor_name: string;
+  doctor_license: string;
+  clinic_or_institution?: string;
+  restrictions_notes?: string;
+  recommendations?: string;
+  visual_acuity_result?: string;
+  audiometry_result?: string;
+  spirometry_result?: string;
+  antidoping_result?: string;
+  blood_pressure?: string;
+}
+
+
 
 
 

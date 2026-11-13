@@ -60,6 +60,14 @@ import {
   EmergencyEvacuationDto,
   StartEvacuationPayload,
   RollCallCheckInPayload,
+  TrainingCourseDto,
+  CreateTrainingCoursePayload,
+  TrainingCertificateDto,
+  IssueDC3Payload,
+  WorkerMedicalProfileDto,
+  UpsertMedicalProfilePayload,
+  OccupationalMedicalExamDto,
+  RecordMedicalExamPayload,
 } from './types';
 import { getStoredToken, setStoredToken, setStoredUser, clearAuthSession } from '../auth';
 
@@ -1058,6 +1066,106 @@ export class ApiClient {
       method: 'POST',
     });
     return res.data;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Training & STPS DC-3 Methods
+  // ---------------------------------------------------------------------------
+
+  /**
+   * GET /api/v1/training/courses
+   */
+  public async listTrainingCourses(): Promise<TrainingCourseDto[]> {
+    const res = await this.request<TrainingCourseDto[]>('/training/courses');
+    return res.data || [];
+  }
+
+  /**
+   * POST /api/v1/training/courses
+   */
+  public async createTrainingCourse(payload: CreateTrainingCoursePayload): Promise<TrainingCourseDto> {
+    const res = await this.request<TrainingCourseDto>('/training/courses', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    return res.data;
+  }
+
+  /**
+   * GET /api/v1/training/dc3
+   */
+  public async listTrainingCertificates(): Promise<TrainingCertificateDto[]> {
+    const res = await this.request<TrainingCertificateDto[]>('/training/dc3');
+    return res.data || [];
+  }
+
+  /**
+   * POST /api/v1/training/dc3
+   */
+  public async issueDC3(payload: IssueDC3Payload): Promise<TrainingCertificateDto> {
+    const res = await this.request<TrainingCertificateDto>('/training/dc3', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    return res.data;
+  }
+
+  /**
+   * GET /api/v1/training/workers/:workerId/dc3
+   */
+  public async listWorkerCertificates(workerId: string): Promise<TrainingCertificateDto[]> {
+    const res = await this.request<TrainingCertificateDto[]>(`/training/workers/${encodeURIComponent(workerId)}/dc3`);
+    return res.data || [];
+  }
+
+  // ---------------------------------------------------------------------------
+  // Occupational Health & Medical Exams (NOM-030-STPS)
+  // ---------------------------------------------------------------------------
+
+  /**
+   * GET /api/v1/health/workers/:workerId/profile
+   */
+  public async getWorkerMedicalProfile(workerId: string): Promise<WorkerMedicalProfileDto> {
+    const res = await this.request<WorkerMedicalProfileDto>(`/health/workers/${encodeURIComponent(workerId)}/profile`);
+    return res.data;
+  }
+
+  /**
+   * PUT /api/v1/health/workers/:workerId/profile
+   */
+  public async upsertWorkerMedicalProfile(workerId: string, payload: UpsertMedicalProfilePayload): Promise<WorkerMedicalProfileDto> {
+    const res = await this.request<WorkerMedicalProfileDto>(`/health/workers/${encodeURIComponent(workerId)}/profile`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    });
+    return res.data;
+  }
+
+  /**
+   * GET /api/v1/health/exams
+   */
+  public async listMedicalExams(): Promise<OccupationalMedicalExamDto[]> {
+    const res = await this.request<OccupationalMedicalExamDto[]>('/health/exams');
+    return res.data || [];
+  }
+
+  /**
+   * POST /api/v1/health/exams
+   */
+  public async recordMedicalExam(payload: RecordMedicalExamPayload): Promise<OccupationalMedicalExamDto> {
+    const res = await this.request<OccupationalMedicalExamDto>('/health/exams', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    return res.data;
+  }
+
+  /**
+   * GET /api/v1/health/workers/:workerId/exams
+   */
+  public async listWorkerMedicalExams(workerId: string): Promise<OccupationalMedicalExamDto[]> {
+    const res = await this.request<OccupationalMedicalExamDto[]>(`/health/workers/${encodeURIComponent(workerId)}/exams`);
+    return res.data || [];
   }
 
 

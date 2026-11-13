@@ -23,10 +23,12 @@ import (
 	"asesamo-api/internal/core/usecase/document"
 	"asesamo-api/internal/core/usecase/epp"
 	"asesamo-api/internal/core/usecase/evacuation"
+	"asesamo-api/internal/core/usecase/health"
 	"asesamo-api/internal/core/usecase/incident"
 	"asesamo-api/internal/core/usecase/inspection"
 	"asesamo-api/internal/core/usecase/permit"
 	"asesamo-api/internal/core/usecase/report"
+	"asesamo-api/internal/core/usecase/training"
 	"asesamo-api/internal/core/usecase/user"
 	"asesamo-api/internal/core/usecase/worker"
 	"asesamo-api/internal/infra/config"
@@ -71,6 +73,8 @@ func main() {
 	incidentRepo := postgres.NewSafetyIncidentRepository(db.DB)
 	eppRepo := postgres.NewEPPRepository(db.DB)
 	evacuationRepo := postgres.NewEmergencyEvacuationRepository(db.DB)
+	trainingRepo := postgres.NewTrainingRepository(db.DB)
+	healthRepo := postgres.NewHealthRepository(db.DB)
 
 	complianceEngine := service.NewComplianceEngine(complianceRepo)
 
@@ -128,6 +132,10 @@ func main() {
 	deliverEPPUseCase := epp.NewDeliverEPPUseCase(eppRepo)
 	startEvacuationUseCase := evacuation.NewStartEvacuationUseCase(evacuationRepo)
 
+	// Training & Health Use Cases (Phase 4)
+	issueDC3UseCase := training.NewIssueDC3CertificateUseCase(trainingRepo)
+	recordMedicalExamUseCase := health.NewRecordMedicalExamUseCase(healthRepo)
+
 	// Handlers (inbound adapters)
 	healthHandler := handler.NewHealthHandler(db, "1.0.0")
 	authHandler := handler.NewAuthHandler(loginUseCase)
@@ -166,6 +174,8 @@ func main() {
 	incidentHandler := handler.NewIncidentHandler(incidentRepo, reportIncidentUseCase)
 	eppHandler := handler.NewEPPHandler(eppRepo, deliverEPPUseCase)
 	evacuationHandler := handler.NewEvacuationHandler(evacuationRepo, startEvacuationUseCase)
+	trainingHandler := handler.NewTrainingHandler(trainingRepo, issueDC3UseCase)
+	occupationalHealthHandler := handler.NewOccupationalHealthHandler(healthRepo, recordMedicalExamUseCase)
 
 	loginLimit := 100
 	if cfg.AppEnv == config.EnvProduction {
@@ -174,23 +184,25 @@ func main() {
 
 	// 4. Assemble HTTP Router
 	router := adapterHTTP.NewRouter(adapterHTTP.RouterConfig{
-		HealthHandler:      healthHandler,
-		AuthHandler:        authHandler,
-		AccessPointHandler: accessPointHandler,
-		AccessHandler:      accessHandler,
-		DocumentHandler:    docHandler,
-		UserHandler:        userHandler,
-		WorkerHandler:      workerHandler,
-		ContractorHandler:  contractorHandler,
-		ReportHandler:      reportHandler,
-		PermitHandler:      permitHandler,
-		InspectionHandler:  inspectionHandler,
-		IncidentHandler:    incidentHandler,
-		EPPHandler:         eppHandler,
-		EvacuationHandler:  evacuationHandler,
-		JWTSecret:          cfg.JWTSecret,
-		CORSOrigins:        cfg.CORSAllowedOrigins,
-		LoginRateLimit:     loginLimit,
+		HealthHandler:             healthHandler,
+		AuthHandler:               authHandler,
+		AccessPointHandler:        accessPointHandler,
+		AccessHandler:             accessHandler,
+		DocumentHandler:           docHandler,
+		UserHandler:               userHandler,
+		WorkerHandler:             workerHandler,
+		ContractorHandler:         contractorHandler,
+		ReportHandler:             reportHandler,
+		PermitHandler:             permitHandler,
+		InspectionHandler:         inspectionHandler,
+		IncidentHandler:           incidentHandler,
+		EPPHandler:                eppHandler,
+		EvacuationHandler:         evacuationHandler,
+		TrainingHandler:           trainingHandler,
+		OccupationalHealthHandler: occupationalHealthHandler,
+		JWTSecret:                 cfg.JWTSecret,
+		CORSOrigins:               cfg.CORSAllowedOrigins,
+		LoginRateLimit:            loginLimit,
 	})
 
 	serverAddr := fmt.Sprintf(":%d", cfg.AppPort)

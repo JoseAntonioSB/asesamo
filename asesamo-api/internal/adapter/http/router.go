@@ -25,12 +25,14 @@ type RouterConfig struct {
 	WorkerHandler      *handler.WorkerHandler
 	ContractorHandler  *handler.ContractorHandler
 	ReportHandler      *handler.ReportHandler
-	PermitHandler      *handler.PermitHandler
-	InspectionHandler  *handler.InspectionHandler
-	IncidentHandler    *handler.IncidentHandler
-	EPPHandler         *handler.EPPHandler
-	EvacuationHandler  *handler.EvacuationHandler
-	JWTSecret          string
+	PermitHandler             *handler.PermitHandler
+	InspectionHandler         *handler.InspectionHandler
+	IncidentHandler           *handler.IncidentHandler
+	EPPHandler                *handler.EPPHandler
+	EvacuationHandler         *handler.EvacuationHandler
+	TrainingHandler           *handler.TrainingHandler
+	OccupationalHealthHandler *handler.OccupationalHealthHandler
+	JWTSecret                 string
 	CORSOrigins        []string
 	LoginRateLimit     int
 }
@@ -192,6 +194,28 @@ func NewRouter(cfg RouterConfig) http.Handler {
 					evr.Post("/start", cfg.EvacuationHandler.StartEvacuation)
 					evr.Post("/{id}/check-in", cfg.EvacuationHandler.CheckInWorker)
 					evr.Post("/{id}/end", cfg.EvacuationHandler.EndEvacuation)
+				})
+			}
+
+			// Training & STPS DC-3 / DC-4 endpoints
+			if cfg.TrainingHandler != nil {
+				r.Route("/training", func(tr chi.Router) {
+					tr.Get("/courses", cfg.TrainingHandler.ListCourses)
+					tr.Post("/courses", cfg.TrainingHandler.CreateCourse)
+					tr.Get("/dc3", cfg.TrainingHandler.ListCertificates)
+					tr.Post("/dc3", cfg.TrainingHandler.IssueDC3)
+					tr.Get("/workers/{workerId}/dc3", cfg.TrainingHandler.ListWorkerCertificates)
+				})
+			}
+
+			// Occupational Health & Medical Exams (NOM-030-STPS)
+			if cfg.OccupationalHealthHandler != nil {
+				r.Route("/health", func(hr chi.Router) {
+					hr.Get("/workers/{workerId}/profile", cfg.OccupationalHealthHandler.GetWorkerMedicalProfile)
+					hr.Put("/workers/{workerId}/profile", cfg.OccupationalHealthHandler.UpsertWorkerMedicalProfile)
+					hr.Get("/exams", cfg.OccupationalHealthHandler.ListAllExams)
+					hr.Post("/exams", cfg.OccupationalHealthHandler.RecordMedicalExam)
+					hr.Get("/workers/{workerId}/exams", cfg.OccupationalHealthHandler.ListWorkerExams)
 				})
 			}
 		})

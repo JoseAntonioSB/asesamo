@@ -21,6 +21,12 @@ export function middleware(request: NextRequest) {
     '/reportes',
     '/credencial',
     '/permisos',
+    '/inspecciones',
+    '/incidentes',
+    '/epp',
+    '/evacuacion',
+    '/capacitacion',
+    '/salud-ocupacional',
   ];
   const isProtectedRoute = protectedPrefixes.some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
