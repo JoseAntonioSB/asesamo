@@ -26,6 +26,10 @@ type RouterConfig struct {
 	ContractorHandler  *handler.ContractorHandler
 	ReportHandler      *handler.ReportHandler
 	PermitHandler      *handler.PermitHandler
+	InspectionHandler  *handler.InspectionHandler
+	IncidentHandler    *handler.IncidentHandler
+	EPPHandler         *handler.EPPHandler
+	EvacuationHandler  *handler.EvacuationHandler
 	JWTSecret          string
 	CORSOrigins        []string
 	LoginRateLimit     int
@@ -148,6 +152,46 @@ func NewRouter(cfg RouterConfig) http.Handler {
 					pr.With(customMiddleware.RequireRole("contractor_admin", "plant_admin", "ehs_manager", "tenant_admin", "super_admin")).Patch("/{id}/checklist", cfg.PermitHandler.UpdateChecklist)
 					pr.With(customMiddleware.RequireRole("ehs_manager", "plant_admin", "tenant_admin", "super_admin")).Post("/{id}/approve", cfg.PermitHandler.ApprovePermit)
 					pr.Post("/{id}/status", cfg.PermitHandler.TransitionStatus)
+				})
+			}
+
+			// Inspection & EHS Audit endpoints
+			if cfg.InspectionHandler != nil {
+				r.Route("/inspections", func(ir chi.Router) {
+					ir.Get("/templates", cfg.InspectionHandler.ListTemplates)
+					ir.Get("/", cfg.InspectionHandler.ListInspections)
+					ir.Post("/", cfg.InspectionHandler.CreateInspection)
+					ir.Post("/{id}/complete", cfg.InspectionHandler.CompleteInspection)
+				})
+			}
+
+			// Incident & Near-Miss endpoints (NOM-021-STPS)
+			if cfg.IncidentHandler != nil {
+				r.Route("/incidents", func(inr chi.Router) {
+					inr.Get("/", cfg.IncidentHandler.ListIncidents)
+					inr.Post("/", cfg.IncidentHandler.ReportIncident)
+					inr.Get("/metrics", cfg.IncidentHandler.GetMetrics)
+				})
+			}
+
+			// EPP Management & Matrix endpoints (NOM-017-STPS)
+			if cfg.EPPHandler != nil {
+				r.Route("/epp", func(er chi.Router) {
+					er.Get("/catalog", cfg.EPPHandler.ListCatalog)
+					er.Post("/catalog", cfg.EPPHandler.CreateItem)
+					er.Get("/deliveries", cfg.EPPHandler.ListDeliveries)
+					er.Post("/deliveries", cfg.EPPHandler.DeliverEPP)
+				})
+			}
+
+			// Emergency Evacuation & Roll Call endpoints (NOM-002-STPS)
+			if cfg.EvacuationHandler != nil {
+				r.Route("/evacuations", func(evr chi.Router) {
+					evr.Get("/muster-points", cfg.EvacuationHandler.ListMusterPoints)
+					evr.Get("/active", cfg.EvacuationHandler.GetActiveEvacuation)
+					evr.Post("/start", cfg.EvacuationHandler.StartEvacuation)
+					evr.Post("/{id}/check-in", cfg.EvacuationHandler.CheckInWorker)
+					evr.Post("/{id}/end", cfg.EvacuationHandler.EndEvacuation)
 				})
 			}
 		})

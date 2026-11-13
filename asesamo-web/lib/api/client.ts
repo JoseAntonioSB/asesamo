@@ -47,6 +47,19 @@ import {
   PermitFilterParams,
   CompleteInspectionInput,
   CompleteInspectionResult,
+  InspectionTemplateDto,
+  SafetyInspectionItemDto,
+  CreateInspectionPayload,
+  IncidentMetricsDto,
+  SafetyIncidentItemDto,
+  ReportIncidentPayload,
+  EPPItemDto,
+  EPPDeliveryDto,
+  DeliverEPPPayload,
+  MusterPointDto,
+  EmergencyEvacuationDto,
+  StartEvacuationPayload,
+  RollCallCheckInPayload,
 } from './types';
 import { getStoredToken, setStoredToken, setStoredUser, clearAuthSession } from '../auth';
 
@@ -887,6 +900,36 @@ export class ApiClient {
   }
 
   /**
+   * GET /api/v1/inspections/templates
+   * Lists active inspection checklist templates.
+   */
+  public async getInspectionTemplates(): Promise<InspectionTemplateDto[]> {
+    const res = await this.request<InspectionTemplateDto[]>('/inspections/templates');
+    return res.data;
+  }
+
+  /**
+   * GET /api/v1/inspections
+   * Lists safety inspections.
+   */
+  public async getInspections(): Promise<SafetyInspectionItemDto[]> {
+    const res = await this.request<SafetyInspectionItemDto[]>('/inspections');
+    return res.data;
+  }
+
+  /**
+   * POST /api/v1/inspections
+   * Creates a new draft inspection.
+   */
+  public async createInspection(payload: CreateInspectionPayload): Promise<SafetyInspectionItemDto> {
+    const res = await this.request<SafetyInspectionItemDto>('/inspections', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    return res.data;
+  }
+
+  /**
    * POST /api/v1/inspections/:id/complete
    * Submits answers for a field safety inspection and calculates score & CAPA actions.
    */
@@ -903,6 +946,122 @@ export class ApiClient {
     );
     return res.data;
   }
+
+  /**
+   * GET /api/v1/incidents
+   * Lists reported safety incidents.
+   */
+  public async getIncidents(): Promise<SafetyIncidentItemDto[]> {
+    const res = await this.request<SafetyIncidentItemDto[]>('/incidents');
+    return res.data;
+  }
+
+  /**
+   * POST /api/v1/incidents
+   * Reports a new safety incident, near-miss, or unsafe condition.
+   */
+  public async reportIncident(payload: ReportIncidentPayload): Promise<SafetyIncidentItemDto> {
+    const res = await this.request<SafetyIncidentItemDto>('/incidents', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    return res.data;
+  }
+
+  /**
+   * GET /api/v1/incidents/metrics
+   * Retrieves STPS incident metrics.
+   */
+  public async getIncidentMetrics(): Promise<IncidentMetricsDto> {
+    const res = await this.request<IncidentMetricsDto>('/incidents/metrics');
+    return res.data;
+  }
+
+  /**
+   * GET /api/v1/epp/catalog
+   * Lists available EPP items.
+   */
+  public async getEPPCatalog(): Promise<EPPItemDto[]> {
+    const res = await this.request<EPPItemDto[]>('/epp/catalog');
+    return res.data;
+  }
+
+  /**
+   * GET /api/v1/epp/deliveries
+   * Lists EPP delivery logs.
+   */
+  public async getEPPDeliveries(): Promise<EPPDeliveryDto[]> {
+    const res = await this.request<EPPDeliveryDto[]>('/epp/deliveries');
+    return res.data;
+  }
+
+  /**
+   * POST /api/v1/epp/deliveries
+   * Records a new personal protective equipment delivery.
+   */
+  public async deliverEPP(payload: DeliverEPPPayload): Promise<EPPDeliveryDto> {
+    const res = await this.request<EPPDeliveryDto>('/epp/deliveries', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    return res.data;
+  }
+
+  /**
+   * GET /api/v1/evacuations/muster-points
+   * Lists active muster safety points.
+   */
+  public async getMusterPoints(): Promise<MusterPointDto[]> {
+    const res = await this.request<MusterPointDto[]>('/evacuations/muster-points');
+    return res.data;
+  }
+
+  /**
+   * GET /api/v1/evacuations/active
+   * Gets current active emergency evacuation or drill.
+   */
+  public async getActiveEvacuation(): Promise<EmergencyEvacuationDto | null> {
+    const res = await this.request<EmergencyEvacuationDto | null>('/evacuations/active');
+    return res.data;
+  }
+
+  /**
+   * POST /api/v1/evacuations/start
+   * Triggers an emergency evacuation or safety drill.
+   */
+  public async startEvacuation(payload: StartEvacuationPayload): Promise<EmergencyEvacuationDto> {
+    const res = await this.request<EmergencyEvacuationDto>('/evacuations/start', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    return res.data;
+  }
+
+  /**
+   * POST /api/v1/evacuations/:id/check-in
+   * Marks a worker as safe at a muster point during evacuation roll call.
+   */
+  public async checkInEvacuee(evacId: string, payload: RollCallCheckInPayload): Promise<{ success: boolean; message: string }> {
+    const res = await this.request<{ success: boolean; message: string }>(`/evacuations/${encodeURIComponent(evacId)}/check-in`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    return res.data;
+  }
+
+  /**
+   * POST /api/v1/evacuations/:id/end
+   * Concludes evacuation and records all-clear time.
+   */
+  public async endEvacuation(evacId: string): Promise<EmergencyEvacuationDto> {
+    const res = await this.request<EmergencyEvacuationDto>(`/evacuations/${encodeURIComponent(evacId)}/end`, {
+      method: 'POST',
+    });
+    return res.data;
+  }
+
+
+
 
   /**
    * Clears stored credentials and logs out.

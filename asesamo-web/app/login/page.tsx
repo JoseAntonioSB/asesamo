@@ -1,8 +1,3 @@
-/**
- * ASESAMO — Security Guard Login Screen
- * Location: asesamo-web/app/login/page.tsx
- */
-
 'use client';
 
 import React, { useState, useEffect, Suspense } from 'react';
@@ -11,7 +6,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { ApiError } from '@/lib/api/client';
 import { getDefaultHomeForRole } from '@/lib/auth';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
-import { ShieldCheck, AlertTriangle, KeyRound, UserCheck, Loader2 } from 'lucide-react';
+import { ShieldCheck, AlertTriangle, KeyRound, UserCheck, Loader2, Lock, ArrowRight, ShieldAlert, Cpu } from 'lucide-react';
 
 function LoginForm() {
   const router = useRouter();
@@ -23,7 +18,6 @@ function LoginForm() {
   const [errorBanner, setErrorBanner] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // If already authenticated, redirect immediately to role home
   useEffect(() => {
     if (isAuthenticated) {
       const redirect = searchParams.get('redirect') || getDefaultHomeForRole(user?.role);
@@ -31,7 +25,6 @@ function LoginForm() {
     }
   }, [isAuthenticated, user, router, searchParams]);
 
-  // Handle URL error param (e.g. session expired)
   useEffect(() => {
     const err = searchParams.get('error');
     if (err === 'session_expired') {
@@ -39,7 +32,6 @@ function LoginForm() {
     }
   }, [searchParams]);
 
-  // Quick-fill demo credentials
   const handleQuickFill = (userEmail = 'guard@asesamo.com') => {
     setEmail(userEmail);
     setPassword('Password123!');
@@ -50,7 +42,6 @@ function LoginForm() {
     e.preventDefault();
     setErrorBanner(null);
 
-    // Client-side validation
     if (!email.trim() || !password) {
       setErrorBanner('Por favor complete todos los campos obligatorios.');
       return;
@@ -88,187 +79,226 @@ function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 flex flex-col justify-center items-center px-4 sm:px-6 lg:px-8 selection:bg-emerald-500 selection:text-white relative">
-      {/* Top right Theme Toggle */}
-      <div className="absolute top-4 right-4 sm:top-6 sm:right-6 z-20">
+    <div className="min-h-screen bg-zinc-950 flex flex-col lg:flex-row text-zinc-100 selection:bg-emerald-500 selection:text-white relative overflow-hidden">
+      {/* Botón Flotante de Tema */}
+      <div className="absolute top-6 right-6 z-30">
         <ThemeToggle showLabel />
       </div>
 
-      {/* Background radial accent */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-slate-950 pointer-events-none" />
-
-      <div className="relative w-full max-w-md space-y-6">
-        {/* Brand Header */}
-        <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 mb-2 shadow-lg shadow-emerald-950/40">
-            <ShieldCheck className="w-8 h-8" />
+      {/* Lado Izquierdo: Formulario de Acceso y Cuentas Demo */}
+      <div className="flex-1 flex flex-col justify-center px-6 sm:px-12 lg:px-20 py-12 z-20 relative">
+        <div className="w-full max-w-md mx-auto space-y-8">
+          {/* Logo y Encabezado */}
+          <div className="space-y-3">
+            <div className="inline-flex items-center gap-2.5 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold tracking-wide">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              Sistema Central de Seguridad Industrial
+            </div>
+            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white font-mono">
+              ASESAMO
+            </h1>
+            <p className="text-sm text-zinc-400 leading-relaxed">
+              Autenticación para supervisores de caseta, administradores de planta y coordinadores EHS.
+            </p>
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-white uppercase sm:text-3xl font-mono">
-            ASESAMO
-          </h1>
-          <p className="text-sm text-slate-400">
-            Control de Acceso Industrial y Verificación de Cumplimiento
+
+          {/* Tarjeta de Formulario */}
+          <div className="bg-zinc-900/80 border border-zinc-800/90 rounded-2xl p-6 sm:p-8 backdrop-blur-xl shadow-2xl space-y-6">
+            {errorBanner && (
+              <div
+                role="alert"
+                className="bg-red-950/40 border border-red-500/40 rounded-xl p-4 flex items-start gap-3 text-red-200 text-xs font-medium"
+              >
+                <AlertTriangle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+                <span>{errorBanner}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="email"
+                  className="block text-xs font-bold text-zinc-300 uppercase tracking-wider"
+                >
+                  Correo Electrónico
+                </label>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  disabled={isSubmitting}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="guard@asesamo.com"
+                  className="w-full px-4 py-3 bg-zinc-950/80 border border-zinc-800 rounded-xl text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all text-sm font-mono"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="password"
+                  className="block text-xs font-bold text-zinc-300 uppercase tracking-wider"
+                >
+                  Contraseña
+                </label>
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  disabled={isSubmitting}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••••••"
+                  className="w-full px-4 py-3 bg-zinc-950/80 border border-zinc-800 rounded-xl text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all text-sm font-mono"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full mt-3 py-3.5 px-6 rounded-xl bg-white hover:bg-zinc-200 active:bg-zinc-300 text-zinc-950 font-bold text-sm shadow-xl shadow-white/5 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin text-zinc-950" />
+                    <span>Verificando credenciales...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Ingresar a Plataforma</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
+              </button>
+            </form>
+
+            {/* Presets Demo */}
+            <div className="pt-4 border-t border-zinc-800/80 space-y-3">
+              <div className="flex items-center justify-between text-xs text-zinc-400 font-semibold">
+                <span className="flex items-center gap-1.5 text-zinc-300">
+                  <UserCheck className="w-4 h-4 text-emerald-400" />
+                  Roles de Demostración:
+                </span>
+                <span className="text-[11px] text-zinc-400 font-mono">Password123!</span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleQuickFill('guard@asesamo.com')}
+                  disabled={isSubmitting}
+                  className={`p-2.5 rounded-xl border text-left transition-all ${
+                    email === 'guard@asesamo.com'
+                      ? 'border-emerald-500 bg-emerald-950/40 text-emerald-300 shadow-sm'
+                      : 'border-zinc-800/80 bg-zinc-950/60 hover:border-zinc-700 text-zinc-300'
+                  }`}
+                >
+                  <div className="font-bold text-xs text-emerald-400">Caseta de Guardia</div>
+                  <div className="truncate text-zinc-400 text-[10px] font-mono">guard@asesamo.com</div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleQuickFill('contratista@mantenimientonorte.com')}
+                  disabled={isSubmitting}
+                  className={`p-2.5 rounded-xl border text-left transition-all ${
+                    email === 'contratista@mantenimientonorte.com'
+                      ? 'border-amber-500 bg-amber-950/40 text-amber-300 shadow-sm'
+                      : 'border-zinc-800/80 bg-zinc-950/60 hover:border-zinc-700 text-zinc-300'
+                  }`}
+                >
+                  <div className="font-bold text-xs text-amber-400">Admin Contratista</div>
+                  <div className="truncate text-zinc-400 text-[10px] font-mono">contratista@...</div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleQuickFill('ehs@asesamo.com')}
+                  disabled={isSubmitting}
+                  className={`p-2.5 rounded-xl border text-left transition-all ${
+                    email === 'ehs@asesamo.com'
+                      ? 'border-blue-500 bg-blue-950/40 text-blue-300 shadow-sm'
+                      : 'border-zinc-800/80 bg-zinc-950/60 hover:border-zinc-700 text-zinc-300'
+                  }`}
+                >
+                  <div className="font-bold text-xs text-blue-400">Gerencia EHS</div>
+                  <div className="truncate text-zinc-400 text-[10px] font-mono">ehs@asesamo.com</div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleQuickFill('admin@asesamo.com')}
+                  disabled={isSubmitting}
+                  className={`p-2.5 rounded-xl border text-left transition-all ${
+                    email === 'admin@asesamo.com'
+                      ? 'border-purple-500 bg-purple-950/40 text-purple-300 shadow-sm'
+                      : 'border-zinc-800/80 bg-zinc-950/60 hover:border-zinc-700 text-zinc-300'
+                  }`}
+                >
+                  <div className="font-bold text-xs text-purple-400">Admin de Planta</div>
+                  <div className="truncate text-zinc-400 text-[10px] font-mono">admin@asesamo.com</div>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <p className="text-center text-xs text-zinc-400 font-mono">
+            ASESAMO • Planta Querétaro • Conforme a Normas Oficiales Mexicanas
           </p>
-          <div className="inline-block px-3 py-1 text-xs font-semibold uppercase tracking-wider text-emerald-400 bg-emerald-950/60 border border-emerald-800/60 rounded-full">
-            Módulo de Caseta de Vigilancia
-          </div>
         </div>
+      </div>
 
-        {/* Login Card */}
-        <div className="bg-slate-900/90 border border-slate-800 shadow-2xl rounded-xl p-6 sm:p-8 backdrop-blur-sm space-y-6">
-          {/* Spanish Error Alert Banner */}
-          {errorBanner && (
-            <div
-              role="alert"
-              className="bg-red-950/50 border border-red-500/50 rounded-lg p-3.5 flex items-start gap-3 text-red-200 text-sm animate-in fade-in duration-200"
-            >
-              <AlertTriangle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
-              <div className="flex-1 font-medium">{errorBanner}</div>
-            </div>
-          )}
+      {/* Lado Derecho: Artefacto Visual Editorial y Candados Inteligentes */}
+      <div className="hidden lg:flex flex-1 relative bg-gradient-to-br from-zinc-900 via-zinc-950 to-black items-center justify-center p-12 border-l border-zinc-800/60 overflow-hidden">
+        {/* Luces Ambientales de Fondo */}
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Email Field */}
-            <div className="space-y-1.5">
-              <label
-                htmlFor="email"
-                className="block text-xs font-semibold text-slate-300 uppercase tracking-wider"
-              >
-                Correo Electrónico
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                disabled={isSubmitting}
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="guard@asesamo.com"
-                className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-700/80 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/60 focus:border-emerald-500 transition-colors text-sm"
-              />
-            </div>
+        <div className="w-full max-w-lg space-y-8 z-10">
+          <div className="space-y-4">
+            <span className="text-xs font-mono uppercase tracking-widest text-emerald-400">
+              Protocolo de Vida o Muerte
+            </span>
+            <h2 className="text-3xl xl:text-4xl font-extrabold tracking-tight text-white leading-tight">
+              Cero accidentes en planta mediante candados digitales en tiempo real.
+            </h2>
+            <p className="text-sm text-zinc-400 leading-relaxed">
+              Validación automatizada de constancias DC-3, certificados médicos y permisos de alto riesgo antes de permitir el ingreso o la apertura de labores en campo.
+            </p>
+          </div>
 
-            {/* Password Field */}
-            <div className="space-y-1.5">
-              <label
-                htmlFor="password"
-                className="block text-xs font-semibold text-slate-300 uppercase tracking-wider"
-              >
-                Contraseña
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                disabled={isSubmitting}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••••••"
-                className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-700/80 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/60 focus:border-emerald-500 transition-colors text-sm"
-              />
-            </div>
-
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full mt-2 py-3 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-semibold text-sm shadow-md shadow-emerald-950/50 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin text-white" />
-                  <span>Verificando credenciales...</span>
-                </>
-              ) : (
-                <>
-                  <KeyRound className="w-4 h-4" />
-                  <span>Ingresar a Caseta</span>
-                </>
-              )}
-            </button>
-          </form>
-
-          {/* Quick-Fill Demo Helpers */}
-          <div className="pt-4 border-t border-slate-800/80 space-y-3">
+          {/* Tarjeta Mockup Viva */}
+          <div className="p-6 rounded-2xl bg-zinc-950/90 border border-zinc-800/80 shadow-2xl backdrop-blur-md space-y-4">
             <div className="flex items-center justify-between">
-              <span className="text-xs text-slate-400 font-medium flex items-center gap-1.5">
-                <UserCheck className="w-3.5 h-3.5 text-emerald-400" />
-                Cuentas de demostración (Click para autollenar):
+              <div className="flex items-center gap-2">
+                <Cpu className="w-4 h-4 text-emerald-400" />
+                <span className="text-xs font-mono font-bold text-zinc-200">MOTOR CANDADO INTELIGENTE</span>
+              </div>
+              <span className="px-2 py-0.5 rounded text-[10px] font-bold font-mono bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                ACTIVO
               </span>
             </div>
 
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => handleQuickFill('guard@asesamo.com')}
-                disabled={isSubmitting}
-                className={`p-2 rounded-lg border text-left transition-colors text-xs font-mono ${
-                  email === 'guard@asesamo.com'
-                    ? 'border-emerald-500 bg-emerald-950/40 text-emerald-300'
-                    : 'border-slate-800 bg-slate-950/80 hover:border-slate-700 text-slate-300'
-                }`}
-              >
-                <div className="font-semibold text-[11px] text-emerald-400">👮 Guardia / Caseta</div>
-                <div className="truncate text-slate-400 text-[10px]">guard@asesamo.com</div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleQuickFill('contratista@mantenimientonorte.com')}
-                disabled={isSubmitting}
-                className={`p-2 rounded-lg border text-left transition-colors text-xs font-mono ${
-                  email === 'contratista@mantenimientonorte.com'
-                    ? 'border-emerald-500 bg-emerald-950/40 text-emerald-300'
-                    : 'border-slate-800 bg-slate-950/80 hover:border-slate-700 text-slate-300'
-                }`}
-              >
-                <div className="font-semibold text-[11px] text-amber-400">🏢 Admin Contratista</div>
-                <div className="truncate text-slate-400 text-[10px]">contratista@mantenimiento...</div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleQuickFill('ehs@asesamo.com')}
-                disabled={isSubmitting}
-                className={`p-2 rounded-lg border text-left transition-colors text-xs font-mono ${
-                  email === 'ehs@asesamo.com'
-                    ? 'border-emerald-500 bg-emerald-950/40 text-emerald-300'
-                    : 'border-slate-800 bg-slate-950/80 hover:border-slate-700 text-slate-300'
-                }`}
-              >
-                <div className="font-semibold text-[11px] text-blue-400">🛡️ EHS Manager</div>
-                <div className="truncate text-slate-400 text-[10px]">ehs@asesamo.com</div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleQuickFill('admin@asesamo.com')}
-                disabled={isSubmitting}
-                className={`p-2 rounded-lg border text-left transition-colors text-xs font-mono ${
-                  email === 'admin@asesamo.com'
-                    ? 'border-emerald-500 bg-emerald-950/40 text-emerald-300'
-                    : 'border-slate-800 bg-slate-950/80 hover:border-slate-700 text-slate-300'
-                }`}
-              >
-                <div className="font-semibold text-[11px] text-purple-400">⚙️ Admin Planta</div>
-                <div className="truncate text-slate-400 text-[10px]">admin@asesamo.com</div>
-              </button>
-            </div>
-
-            <div className="text-center text-[11px] text-slate-500 font-mono">
-              Contraseña única: <span className="text-slate-300 font-semibold">Password123!</span>
+            <div className="space-y-2 text-xs font-mono">
+              <div className="p-3 rounded-xl bg-zinc-900/80 border border-zinc-800 flex items-center justify-between">
+                <span className="text-zinc-400">NOM-009 Trabajos en Altura:</span>
+                <span className="text-emerald-400 font-bold">DC-3 VIGENTE</span>
+              </div>
+              <div className="p-3 rounded-xl bg-zinc-900/80 border border-zinc-800 flex items-center justify-between">
+                <span className="text-zinc-400">NOM-033 Espacios Confinados:</span>
+                <span className="text-emerald-400 font-bold">EXAMEN MÉDICO APTO</span>
+              </div>
+              <div className="p-3 rounded-xl bg-zinc-900/80 border border-zinc-800 flex items-center justify-between">
+                <span className="text-zinc-400">Caseta de Control:</span>
+                <span className="text-emerald-400 font-bold">ESCÁNER QR SINCRONIZADO</span>
+              </div>
             </div>
           </div>
         </div>
-
-        {/* Industrial Footer Note */}
-        <p className="text-center text-xs text-slate-400 font-mono">
-          ASESAMO v1.0 • Planta Querétaro Norte • NOM-STPS
-        </p>
       </div>
     </div>
   );
@@ -278,7 +308,7 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-slate-950 flex items-center justify-center text-slate-400">
+        <div className="min-h-screen bg-zinc-950 flex items-center justify-center text-zinc-400">
           <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
         </div>
       }

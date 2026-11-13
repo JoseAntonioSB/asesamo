@@ -652,6 +652,210 @@ export interface InspectionActionPlanDto {
   contractor_id?: string;
 }
 
+export interface InspectionTemplateItemDto {
+  id: string;
+  template_id: string;
+  category: string;
+  question: string;
+  guidance_notes?: string;
+  weight: number;
+  critical_risk: boolean;
+  sort_order: number;
+}
+
+export interface InspectionTemplateDto {
+  id: string;
+  title: string;
+  description?: string;
+  category: string;
+  normative_reference?: string;
+  is_active: boolean;
+  items?: InspectionTemplateItemDto[];
+}
+
+export interface SafetyInspectionItemDto {
+  id: string;
+  inspection_number: string;
+  inspection_type: InspectionType;
+  status: InspectionStatus;
+  area_or_location: string;
+  contractor_id?: string;
+  inspector_id: string;
+  score_percentage?: number | null;
+  total_items: number;
+  compliant_items: number;
+  non_compliant_items: number;
+  na_items: number;
+  notes?: string;
+  created_at: string;
+}
+
+export interface CreateInspectionPayload {
+  template_id: string;
+  inspection_type?: InspectionType;
+  area_or_location: string;
+  contractor_id?: string;
+  notes?: string;
+}
+
+// ---------------------------------------------------------------------------
+// Safety Incidents & Near-Misses Types (NOM-021-STPS)
+// ---------------------------------------------------------------------------
+export type IncidentType =
+  | 'unsafe_act'
+  | 'unsafe_condition'
+  | 'near_miss'
+  | 'first_aid'
+  | 'medical_treatment'
+  | 'lost_time_injury'
+  | 'fatality';
+
+export type IncidentSeverity = 'minor' | 'moderate' | 'major' | 'catastrophic';
+
+export type IncidentStatus =
+  | 'reported'
+  | 'investigating'
+  | 'actions_pending'
+  | 'closed'
+  | 'cancelled';
+
+export interface SafetyIncidentItemDto {
+  id: string;
+  incident_number: string;
+  incident_type: IncidentType;
+  severity: IncidentSeverity;
+  status: IncidentStatus;
+  title: string;
+  description: string;
+  location: string;
+  event_timestamp: string;
+  reported_by_user_id: string;
+  involved_worker_id?: string;
+  contractor_id?: string;
+  days_lost: number;
+  evidence_photo_url?: string;
+  root_cause_summary?: string;
+  created_at: string;
+}
+
+export interface ReportIncidentPayload {
+  type: IncidentType;
+  severity: IncidentSeverity;
+  title: string;
+  description: string;
+  location: string;
+  event_timestamp?: string;
+  involved_worker_id?: string;
+  contractor_id?: string;
+  evidence_photo_url?: string;
+}
+
+export interface IncidentMetricsDto {
+  total_incidents: number;
+  near_misses: number;
+  unsafe_conditions: number;
+  unsafe_acts: number;
+  lost_time_injuries: number;
+  total_days_lost: number;
+}
+
+// ---------------------------------------------------------------------------
+// EPP Management & Dotation Matrix Types (NOM-017-STPS)
+// ---------------------------------------------------------------------------
+export type EPPCategory =
+  | 'head'
+  | 'eyes_face'
+  | 'hearing'
+  | 'respiratory'
+  | 'hands'
+  | 'body'
+  | 'feet'
+  | 'fall_arrest';
+
+export type EPPDeliveryStatus =
+  | 'delivered_active'
+  | 'replaced'
+  | 'expired'
+  | 'returned';
+
+export interface EPPItemDto {
+  id: string;
+  code: string;
+  name: string;
+  category: EPPCategory;
+  normative_standard?: string;
+  lifespan_days: number;
+  stock_quantity: number;
+  is_active: boolean;
+}
+
+export interface EPPDeliveryDto {
+  id: string;
+  epp_item_id: string;
+  worker_id: string;
+  contractor_id?: string;
+  delivery_date: string;
+  expiration_date: string;
+  status: EPPDeliveryStatus;
+  delivered_by_user_id: string;
+  signature_data?: string;
+  notes?: string;
+  created_at: string;
+}
+
+export interface DeliverEPPPayload {
+  epp_item_id: string;
+  worker_id: string;
+  contractor_id?: string;
+  delivery_date?: string;
+  signature_data?: string;
+  notes?: string;
+}
+
+// ---------------------------------------------------------------------------
+// Emergency Evacuation & Roll Call Types (NOM-002-STPS)
+// ---------------------------------------------------------------------------
+export type EvacuationType = 'drill' | 'fire' | 'gas_leak' | 'earthquake' | 'spill' | 'other';
+export type EvacuationStatus = 'active' | 'all_clear' | 'cancelled';
+export type RollCallStatus = 'safe' | 'missing' | 'hospitalized';
+
+export interface MusterPointDto {
+  id: string;
+  code: string;
+  name: string;
+  location_description?: string;
+  capacity: number;
+  is_active: boolean;
+}
+
+export interface EmergencyEvacuationDto {
+  id: string;
+  evacuation_number: string;
+  evacuation_type: EvacuationType;
+  status: EvacuationStatus;
+  description?: string;
+  started_at: string;
+  ended_at?: string;
+  evacuation_time_seconds: number;
+  total_headcount: number;
+  safe_count: number;
+  missing_count: number;
+}
+
+export interface StartEvacuationPayload {
+  type: EvacuationType;
+  description?: string;
+}
+
+export interface RollCallCheckInPayload {
+  worker_id: string;
+  muster_point_id: string;
+  notes?: string;
+}
+
+
+
+
 export interface CompleteInspectionResult {
   inspection_id: string;
   score_percentage: number;

@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"asesamo-api/internal/core/domain/entity"
 	"asesamo-api/internal/core/domain/repository"
@@ -32,6 +33,102 @@ func NewInspectionHandler(repo repository.SafetyInspectionRepository, completeUC
 		repo:       repo,
 		completeUC: completeUC,
 	}
+}
+
+func (h *InspectionHandler) ListTemplates(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := tenant.FromContext(r.Context())
+	if err != nil {
+		http.Error(w, `{"error":"No se encontró información del tenant"}`, http.StatusUnauthorized)
+		return
+	}
+
+	templates, err := h.repo.ListTemplates(r.Context(), tenantID)
+	if err != nil {
+		http.Error(w, `{"error":"`+err.Error()+`"}`, http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(map[string]interface{}{
+		"data": templates,
+	})
+}
+
+func (h *InspectionHandler) ListInspections(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := tenant.FromContext(r.Context())
+	if err != nil {
+		http.Error(w, `{"error":"No se encontró información del tenant"}`, http.StatusUnauthorized)
+		return
+	}
+
+	inspections, total, err := h.repo.ListInspections(r.Context(), tenantID, repository.InspectionFilter{})
+	if err != nil {
+		http.Error(w, `{"error":"`+err.Error()+`"}`, http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(map[string]interface{}{
+		"data":  inspections,
+		"total": total,
+	})
+}
+
+type CreateInspectionRequestBody struct {
+	TemplateID     string `json:"template_id"`
+	InspectionType string `json:"inspection_type"`
+	AreaOrLocation string `json:"area_or_location"`
+	ContractorID   string `json:"contractor_id,omitempty"`
+	Notes          string `json:"notes,omitempty"`
+}
+
+func (h *InspectionHandler) CreateInspection(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := tenant.FromContext(r.Context())
+	if err != nil {
+		http.Error(w, `{"error":"No se encontró información del tenant"}`, http.StatusUnauthorized)
+		return
+	}
+	userID, _ := tenant.UserIDFromContext(r.Context())
+
+	var req CreateInspectionRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, `{"error":"Cuerpo de solicitud inválido"}`, http.StatusBadRequest)
+		return
+	}
+
+	tmplID, err := uuid.Parse(req.TemplateID)
+	if err != nil {
+		http.Error(w, `{"error":"ID de plantilla inválido"}`, http.StatusBadRequest)
+		return
+	}
+
+	inspType := entity.InspectionType(req.InspectionType)
+	if inspType == "" {
+		inspType = entity.InspectionTypeRoutine
+	}
+
+	inspNumber := "INSP-" + time.Now().Format("2006") + "-" + uuid.New().String()[:6]
+	insp := entity.NewSafetyInspection(tenantID, tmplID, inspNumber, inspType, req.AreaOrLocation, userID)
+	insp.Notes = req.Notes
+
+	if req.ContractorID != "" {
+		if cid, err := uuid.Parse(req.ContractorID); err == nil {
+			insp.ContractorID = &cid
+		}
+	}
+
+	if err := h.repo.CreateInspection(r.Context(), insp); err != nil {
+		http.Error(w, `{"error":"`+err.Error()+`"}`, http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	_ = json.NewEncoder(w).Encode(map[string]interface{}{
+		"data": insp,
+	})
 }
 
 func (h *InspectionHandler) CompleteInspection(w http.ResponseWriter, r *http.Request) {
