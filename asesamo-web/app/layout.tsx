@@ -3,6 +3,7 @@ import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/auth-context";
 import { ThemeProvider } from "@/contexts/theme-context";
+import { PwaProvider } from "@/components/pwa/pwa-provider";
 import { Toaster } from "sonner";
 
 const inter = Inter({
@@ -49,10 +50,12 @@ export default function RootLayout({
       >
         <AuthProvider>
           <ThemeProvider>
-            <div className="relative flex min-h-screen flex-col">
-              {children}
-            </div>
-            <Toaster position="top-right" richColors />
+            <PwaProvider>
+              <div className="relative flex min-h-screen flex-col">
+                {children}
+              </div>
+              <Toaster position="top-right" richColors />
+            </PwaProvider>
           </ThemeProvider>
         </AuthProvider>
       </body>
