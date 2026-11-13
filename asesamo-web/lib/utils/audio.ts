@@ -118,6 +118,37 @@ class CasetaAudioEngine {
       // Audio playback fails gracefully
     }
   }
+
+  public playEmergencySiren(): void {
+    if (this.isMuted) return;
+    try {
+      const ctx = this.initContext();
+      if (!ctx) return;
+
+      const now = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = "sawtooth";
+      // Modulate frequency like an industrial emergency evacuation siren
+      osc.frequency.setValueAtTime(650, now);
+      osc.frequency.linearRampToValueAtTime(950, now + 0.3);
+      osc.frequency.linearRampToValueAtTime(650, now + 0.6);
+      osc.frequency.linearRampToValueAtTime(950, now + 0.9);
+      osc.frequency.linearRampToValueAtTime(650, now + 1.2);
+
+      gain.gain.setValueAtTime(0.3, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 1.3);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start(now);
+      osc.stop(now + 1.3);
+    } catch {
+      // Audio playback fails gracefully
+    }
+  }
 }
 
 export const casetaAudio = new CasetaAudioEngine();

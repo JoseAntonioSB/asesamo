@@ -1168,8 +1168,19 @@ export class ApiClient {
     return res.data || [];
   }
 
+  // ---------------------------------------------------------------------------
+  // Real-time Event Stream (SSE)
+  // ---------------------------------------------------------------------------
 
-
+  /**
+   * Returns the absolute Server-Sent Events URL for real-time industrial events.
+   * Includes active token in query parameter for EventSource compatibility.
+   */
+  public getRealtimeEventsUrl(explicitToken?: string): string {
+    const token = explicitToken || getStoredToken();
+    const query = token ? `?token=${encodeURIComponent(token)}` : '';
+    return `${this.baseUrl}/realtime/events${query}`;
+  }
 
   /**
    * Clears stored credentials and logs out.

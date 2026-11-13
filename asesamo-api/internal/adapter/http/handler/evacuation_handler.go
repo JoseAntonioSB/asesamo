@@ -3,10 +3,12 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"asesamo-api/internal/core/domain/entity"
 	"asesamo-api/internal/core/domain/repository"
 	usecase "asesamo-api/internal/core/usecase/evacuation"
+	"asesamo-api/internal/infra/realtime"
 	"asesamo-api/pkg/tenant"
 
 	"github.com/go-chi/chi/v5"
@@ -16,12 +18,14 @@ import (
 type EvacuationHandler struct {
 	repo    repository.EmergencyEvacuationRepository
 	startUC *usecase.StartEvacuationUseCase
+	broker  realtime.Broker
 }
 
-func NewEvacuationHandler(repo repository.EmergencyEvacuationRepository, startUC *usecase.StartEvacuationUseCase) *EvacuationHandler {
+func NewEvacuationHandler(repo repository.EmergencyEvacuationRepository, startUC *usecase.StartEvacuationUseCase, broker realtime.Broker) *EvacuationHandler {
 	return &EvacuationHandler{
 		repo:    repo,
 		startUC: startUC,
+		broker:  broker,
 	}
 }
 
@@ -76,6 +80,23 @@ func (h *EvacuationHandler) StartEvacuation(w http.ResponseWriter, r *http.Reque
 	if err != nil {
 		http.Error(w, `{"error":"`+err.Error()+`"}`, http.StatusBadRequest)
 		return
+	}
+
+	if h.broker != nil {
+		h.broker.Publish(realtime.Event{
+			Type:      "evacuation.started",
+			TenantID:  tenantID.String(),
+			Timestamp: time.Now(),
+			Payload: map[string]interface{}{
+				"evacuation_id":     evac.ID.String(),
+				"evacuation_number": evac.EvacuationNumber,
+				"evacuation_type":   string(evac.EvacuationType),
+				"description":       evac.Description,
+				"total_headcount":   evac.TotalHeadcount,
+				"safe_count":        evac.SafeCount,
+				"missing_count":     evac.MissingCount,
+			},
+		})
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -142,6 +163,27 @@ func (h *EvacuationHandler) CheckInWorker(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	if h.broker != nil {
+		tenantID, _ := tenant.FromContext(r.Context())
+		activeEvac, _ := h.repo.GetActiveEvacuation(r.Context(), tenantID)
+		payload := map[string]interface{}{
+			"evacuation_id":   evacID.String(),
+			"worker_id":       workerID.String(),
+			"muster_point_id": musterID.String(),
+		}
+		if activeEvac != nil {
+			payload["total_headcount"] = activeEvac.TotalHeadcount
+			payload["safe_count"] = activeEvac.SafeCount
+			payload["missing_count"] = activeEvac.MissingCount
+		}
+		h.broker.Publish(realtime.Event{
+			Type:      "evacuation.roll_call_checkin",
+			TenantID:  tenantID.String(),
+			Timestamp: time.Now(),
+			Payload:   payload,
+		})
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	_ = json.NewEncoder(w).Encode(map[string]interface{}{
@@ -178,6 +220,19 @@ func (h *EvacuationHandler) EndEvacuation(w http.ResponseWriter, r *http.Request
 	if err := h.repo.EndEvacuation(r.Context(), evac); err != nil {
 		http.Error(w, `{"error":"`+err.Error()+`"}`, http.StatusInternalServerError)
 		return
+	}
+
+	if h.broker != nil {
+		h.broker.Publish(realtime.Event{
+			Type:      "evacuation.ended",
+			TenantID:  tenantID.String(),
+			Timestamp: time.Now(),
+			Payload: map[string]interface{}{
+				"evacuation_id": evac.ID.String(),
+				"status":        "closed",
+				"all_clear":     true,
+			},
+		})
 	}
 
 	w.Header().Set("Content-Type", "application/json")

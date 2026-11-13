@@ -33,6 +33,7 @@ import (
 	"asesamo-api/internal/core/usecase/worker"
 	"asesamo-api/internal/infra/config"
 	"asesamo-api/internal/infra/database"
+	"asesamo-api/internal/infra/realtime"
 )
 
 func main() {
@@ -173,7 +174,9 @@ func main() {
 	inspectionHandler := handler.NewInspectionHandler(inspectionRepo, completeInspectionUseCase)
 	incidentHandler := handler.NewIncidentHandler(incidentRepo, reportIncidentUseCase)
 	eppHandler := handler.NewEPPHandler(eppRepo, deliverEPPUseCase)
-	evacuationHandler := handler.NewEvacuationHandler(evacuationRepo, startEvacuationUseCase)
+	eventBroker := realtime.NewInMemoryEventBroker(100)
+	realtimeHandler := handler.NewRealtimeHandler(eventBroker)
+	evacuationHandler := handler.NewEvacuationHandler(evacuationRepo, startEvacuationUseCase, eventBroker)
 	trainingHandler := handler.NewTrainingHandler(trainingRepo, issueDC3UseCase)
 	occupationalHealthHandler := handler.NewOccupationalHealthHandler(healthRepo, recordMedicalExamUseCase)
 
@@ -200,6 +203,7 @@ func main() {
 		EvacuationHandler:         evacuationHandler,
 		TrainingHandler:           trainingHandler,
 		OccupationalHealthHandler: occupationalHealthHandler,
+		RealtimeHandler:           realtimeHandler,
 		JWTSecret:                 cfg.JWTSecret,
 		CORSOrigins:               cfg.CORSAllowedOrigins,
 		LoginRateLimit:            loginLimit,

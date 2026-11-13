@@ -18,19 +18,33 @@ func Auth(jwtSecret string) func(http.Handler) http.Handler {
 
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			var tokenStr string
+
 			authHeader := r.Header.Get("Authorization")
-			if authHeader == "" {
+			if authHeader != "" {
+				parts := strings.SplitN(authHeader, " ", 2)
+				if len(parts) == 2 && strings.EqualFold(parts[0], "Bearer") {
+					tokenStr = strings.TrimSpace(parts[1])
+				}
+			}
+
+			if tokenStr == "" {
+				if qToken := r.URL.Query().Get("token"); qToken != "" {
+					tokenStr = strings.TrimSpace(qToken)
+				}
+			}
+
+			if tokenStr == "" {
+				if c, err := r.Cookie("asesamo_token"); err == nil && c.Value != "" {
+					tokenStr = strings.TrimSpace(c.Value)
+				}
+			}
+
+			if tokenStr == "" {
 				dto.WriteError(w, domainErrors.ErrUnauthorized)
 				return
 			}
 
-			parts := strings.SplitN(authHeader, " ", 2)
-			if len(parts) != 2 || !strings.EqualFold(parts[0], "Bearer") || strings.TrimSpace(parts[1]) == "" {
-				dto.WriteError(w, domainErrors.ErrUnauthorized)
-				return
-			}
-
-			tokenStr := strings.TrimSpace(parts[1])
 			claims, err := jwt.ValidateToken(tokenStr, secretBytes)
 			if err != nil {
 				if errors.Is(err, jwt.ErrExpiredToken) {

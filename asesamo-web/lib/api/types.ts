@@ -1011,6 +1011,35 @@ export interface RecordMedicalExamPayload {
   blood_pressure?: string;
 }
 
+// ---------------------------------------------------------------------------
+// Real-time Event Stream Types (SSE / WebSockets / WebPush)
+// ---------------------------------------------------------------------------
+export interface RealtimeEvacuationStartedEvent {
+  evacuation_id: string;
+  evacuation_number: string;
+  evacuation_type: EvacuationType;
+  description?: string;
+  total_headcount: number;
+  safe_count: number;
+  missing_count: number;
+}
+
+export interface RealtimeRollCallCheckInEvent {
+  evacuation_id: string;
+  worker_id: string;
+  muster_point_id: string;
+  total_headcount?: number;
+  safe_count?: number;
+  missing_count?: number;
+}
+
+export interface RealtimeEvacuationEndedEvent {
+  evacuation_id: string;
+  status: string;
+  all_clear: boolean;
+}
+
+
 
 
 

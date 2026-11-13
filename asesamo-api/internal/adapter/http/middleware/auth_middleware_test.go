@@ -55,6 +55,33 @@ func TestAuthMiddleware(t *testing.T) {
 		assert.Equal(t, "ok", rec.Body.String())
 	})
 
+	t.Run("valid token in query parameter allows request (SSE fallback)", func(t *testing.T) {
+		token, err := jwt.SignToken(userID, tenantID, role, []byte(testSecret))
+		require.NoError(t, err)
+
+		req := httptest.NewRequest(http.MethodGet, "/protected?token="+token, nil)
+		rec := httptest.NewRecorder()
+
+		authHandler.ServeHTTP(rec, req)
+
+		assert.Equal(t, http.StatusOK, rec.Code)
+		assert.Equal(t, "ok", rec.Body.String())
+	})
+
+	t.Run("valid token in cookie allows request (Service Worker fallback)", func(t *testing.T) {
+		token, err := jwt.SignToken(userID, tenantID, role, []byte(testSecret))
+		require.NoError(t, err)
+
+		req := httptest.NewRequest(http.MethodGet, "/protected", nil)
+		req.AddCookie(&http.Cookie{Name: "asesamo_token", Value: token})
+		rec := httptest.NewRecorder()
+
+		authHandler.ServeHTTP(rec, req)
+
+		assert.Equal(t, http.StatusOK, rec.Code)
+		assert.Equal(t, "ok", rec.Body.String())
+	})
+
 	t.Run("missing Authorization header returns 401 UNAUTHORIZED", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/protected", nil)
 		rec := httptest.NewRecorder()

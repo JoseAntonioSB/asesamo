@@ -4,6 +4,7 @@ import "./globals.css";
 import { AuthProvider } from "@/contexts/auth-context";
 import { ThemeProvider } from "@/contexts/theme-context";
 import { PwaProvider } from "@/components/pwa/pwa-provider";
+import { EmergencyAlertProvider } from "@/components/realtime/emergency-alert-provider";
 import { Toaster } from "sonner";
 
 const inter = Inter({
@@ -51,10 +52,12 @@ export default function RootLayout({
         <AuthProvider>
           <ThemeProvider>
             <PwaProvider>
-              <div className="relative flex min-h-screen flex-col">
-                {children}
-              </div>
-              <Toaster position="top-right" richColors />
+              <EmergencyAlertProvider>
+                <div className="relative flex min-h-screen flex-col">
+                  {children}
+                </div>
+                <Toaster position="top-right" richColors />
+              </EmergencyAlertProvider>
             </PwaProvider>
           </ThemeProvider>
         </AuthProvider>

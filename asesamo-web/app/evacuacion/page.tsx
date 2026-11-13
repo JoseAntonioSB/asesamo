@@ -56,11 +56,34 @@ function EvacuacionDashboardContent() {
 
   useEffect(() => {
     loadData();
-    // Sondeo periódico cada 5 segundos si hay evacuación activa
+
+    // Sondeo periódico cada 10 segundos como fallback
     const interval = setInterval(() => {
       loadData(true);
-    }, 5000);
-    return () => clearInterval(interval);
+    }, 10000);
+
+    // Escucha instantánea de eventos en tiempo real SSE
+    const handleEvacStarted = () => {
+      loadData(true);
+    };
+    const handleRollCall = () => {
+      loadData(true);
+    };
+    const handleEvacEnded = () => {
+      setActiveEvac(null);
+      loadData(true);
+    };
+
+    window.addEventListener('asesamo:evacuation:started', handleEvacStarted);
+    window.addEventListener('asesamo:evacuation:roll_call', handleRollCall);
+    window.addEventListener('asesamo:evacuation:ended', handleEvacEnded);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('asesamo:evacuation:started', handleEvacStarted);
+      window.removeEventListener('asesamo:evacuation:roll_call', handleRollCall);
+      window.removeEventListener('asesamo:evacuation:ended', handleEvacEnded);
+    };
   }, [loadData]);
 
   const handleStartEvacuation = async () => {

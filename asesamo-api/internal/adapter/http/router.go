@@ -32,6 +32,7 @@ type RouterConfig struct {
 	EvacuationHandler         *handler.EvacuationHandler
 	TrainingHandler           *handler.TrainingHandler
 	OccupationalHealthHandler *handler.OccupationalHealthHandler
+	RealtimeHandler           *handler.RealtimeHandler
 	JWTSecret                 string
 	CORSOrigins        []string
 	LoginRateLimit     int
@@ -216,6 +217,12 @@ func NewRouter(cfg RouterConfig) http.Handler {
 					hr.Get("/exams", cfg.OccupationalHealthHandler.ListAllExams)
 					hr.Post("/exams", cfg.OccupationalHealthHandler.RecordMedicalExam)
 					hr.Get("/workers/{workerId}/exams", cfg.OccupationalHealthHandler.ListWorkerExams)
+				})
+			}
+			// Real-Time SSE Event Stream
+			if cfg.RealtimeHandler != nil {
+				r.Route("/realtime", func(rr chi.Router) {
+					rr.Get("/events", cfg.RealtimeHandler.StreamEvents)
 				})
 			}
 		})
