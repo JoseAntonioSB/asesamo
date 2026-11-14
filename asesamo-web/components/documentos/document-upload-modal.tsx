@@ -14,7 +14,14 @@ import { Input } from '@/components/ui/input';
 import { apiClient, ApiError } from '@/lib/api/client';
 import { DocumentTypeItem, DocumentItem } from '@/lib/api/types';
 import { toast } from 'sonner';
-import { UploadCloud, FileText, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { UploadCloud, FileText, CheckCircle2, AlertCircle, Loader2, UserCheck } from 'lucide-react';
+
+export interface WorkerOption {
+  id: string;
+  name: string;
+  curp?: string;
+  jobTitle?: string;
+}
 
 interface DocumentUploadModalProps {
   open: boolean;
@@ -22,6 +29,8 @@ interface DocumentUploadModalProps {
   documentTypes: DocumentTypeItem[];
   onUploadSuccess: (newDoc: DocumentItem) => void;
   defaultDocTypeCode?: string;
+  defaultWorkerId?: string;
+  workers?: WorkerOption[];
 }
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
@@ -34,10 +43,13 @@ export function DocumentUploadModal({
   documentTypes,
   onUploadSuccess,
   defaultDocTypeCode,
+  defaultWorkerId,
+  workers,
 }: DocumentUploadModalProps) {
   const [selectedTypeCode, setSelectedTypeCode] = useState<string>(
     defaultDocTypeCode || (documentTypes[0]?.code ?? 'DC3')
   );
+  const [selectedWorkerId, setSelectedWorkerId] = useState<string>(defaultWorkerId || '');
   const [issuedAt, setIssuedAt] = useState<string>('');
   const [expiresAt, setExpiresAt] = useState<string>('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -46,6 +58,22 @@ export function DocumentUploadModal({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Sync defaults when modal opens or props change
+  React.useEffect(() => {
+    if (defaultWorkerId) {
+      setSelectedWorkerId(defaultWorkerId);
+    }
+  }, [defaultWorkerId, open]);
+
+  React.useEffect(() => {
+    if (defaultDocTypeCode) {
+      setSelectedTypeCode(defaultDocTypeCode);
+    }
+  }, [defaultDocTypeCode, open]);
+
+  const currentDocType = documentTypes.find((dt) => dt.code === selectedTypeCode);
+  const isWorkerDoc = currentDocType ? currentDocType.applies_to === 'worker' : true;
 
   // Validate file client-side
   const validateFile = (file: File): boolean => {
@@ -119,6 +147,9 @@ export function DocumentUploadModal({
     setIssuedAt('');
     setExpiresAt('');
     setIsUploading(false);
+    if (!defaultWorkerId) {
+      setSelectedWorkerId('');
+    }
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -139,6 +170,12 @@ export function DocumentUploadModal({
       return;
     }
 
+    if (isWorkerDoc && workers && workers.length > 0 && !selectedWorkerId) {
+      setErrorMessage('Debe seleccionar el trabajador al que se le asignará este documento.');
+      toast.error('Falta el trabajador asignado', { description: 'Seleccione un trabajador de la cuadrilla.' });
+      return;
+    }
+
     try {
       setIsUploading(true);
 
@@ -147,6 +184,7 @@ export function DocumentUploadModal({
         documentTypeCode: selectedTypeCode,
         issuedAt: issuedAt || undefined,
         expiresAt: expiresAt || undefined,
+        workerId: isWorkerDoc && selectedWorkerId ? selectedWorkerId : undefined,
       });
 
       toast.success('Documento subido correctamente', {
@@ -211,6 +249,37 @@ export function DocumentUploadModal({
               ))}
             </select>
           </div>
+
+          {/* Worker Selector (visible when document applies to an individual worker and workers list is provided) */}
+          {isWorkerDoc && workers && workers.length > 0 && (
+            <div className="space-y-1.5 p-3 rounded-lg bg-slate-950/60 border border-slate-800">
+              <label
+                htmlFor="workerSelect"
+                className="block text-xs font-semibold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5"
+              >
+                <UserCheck className="w-3.5 h-3.5" />
+                Trabajador Asignado <span className="text-red-400">*</span>
+              </label>
+              <select
+                id="workerSelect"
+                value={selectedWorkerId}
+                onChange={(e) => setSelectedWorkerId(e.target.value)}
+                disabled={isUploading}
+                required
+                className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/60 focus:border-emerald-500"
+              >
+                <option value="">-- Seleccionar trabajador de la cuadrilla --</option>
+                {workers.map((w) => (
+                  <option key={w.id} value={w.id}>
+                    {w.name} {w.jobTitle ? `— ${w.jobTitle}` : ''} {w.curp ? `(${w.curp})` : ''}
+                  </option>
+                ))}
+              </select>
+              <p className="text-[11px] text-slate-400">
+                Este tipo de documento se integrará al expediente personal del trabajador seleccionado.
+              </p>
+            </div>
+          )}
 
           {/* Drag & Drop Upload Zone */}
           <div className="space-y-1.5">

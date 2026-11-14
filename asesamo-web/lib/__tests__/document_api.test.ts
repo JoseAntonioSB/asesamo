@@ -56,6 +56,51 @@ test('ApiClient.uploadDocument serializes FormData and extracts document payload
   assert.equal(result.document_type_code, 'DC3');
 });
 
+test('ApiClient.uploadDocument appends worker_id when uploading a document assigned to a worker', async (t) => {
+  setStoredToken('test-token-xyz');
+  const client = new ApiClient('http://localhost:8080/api/v1');
+
+  const originalFetch = global.fetch;
+  t.after(() => {
+    global.fetch = originalFetch;
+    clearAuthSession();
+  });
+
+  let capturedFormData: FormData | null = null;
+
+  global.fetch = async (url: string | URL | Request, options?: RequestInit) => {
+    if (options?.body instanceof FormData) {
+      capturedFormData = options.body;
+    }
+
+    return new Response(
+      JSON.stringify({
+        data: {
+          id: 'doc-worker-123',
+          document_type_code: 'DC3',
+          file_name: 'dc3_worker.pdf',
+          status: 'pending_review',
+        },
+      }),
+      { status: 201, headers: { 'Content-Type': 'application/json' } }
+    );
+  };
+
+  const file = new File(['%PDF-1.4 worker DC3'], 'dc3_worker.pdf', { type: 'application/pdf' });
+  const result = await client.uploadDocument({
+    file,
+    documentTypeCode: 'DC3',
+    workerId: 'worker-uuid-999',
+    issuedAt: '2026-02-01',
+    expiresAt: '2027-02-01',
+  });
+
+  assert.ok(capturedFormData, 'FormData should be captured');
+  assert.equal(capturedFormData.get('worker_id'), 'worker-uuid-999');
+  assert.equal(capturedFormData.get('document_type_code'), 'DC3');
+  assert.equal(result.id, 'doc-worker-123');
+});
+
 test('ApiClient.getMyDocuments queries /documents/my-documents with proper query params', async (t) => {
   setStoredToken('test-token-xyz');
   const client = new ApiClient('http://localhost:8080/api/v1');

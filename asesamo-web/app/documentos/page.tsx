@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { useAuth } from '@/contexts/auth-context';
 import { apiClient } from '@/lib/api/client';
 import { DocumentItem, DocumentTypeItem } from '@/lib/api/types';
-import { DocumentUploadModal } from '@/components/documentos/document-upload-modal';
+import { DocumentUploadModal, WorkerOption } from '@/components/documentos/document-upload-modal';
 import { DocumentListTable } from '@/components/documentos/document-list-table';
 import { DocumentSummaryCards } from '@/components/documentos/document-summary-cards';
 import { Button } from '@/components/ui/button';
@@ -23,28 +24,64 @@ import {
   QrCode,
   Building2,
   BarChart3,
+  UserCheck,
+  Users,
 } from 'lucide-react';
 
 function DocumentosContent() {
   const { user, logout } = useAuth();
+  const searchParams = useSearchParams();
+  const workerIdFilter = searchParams.get('worker_id') || undefined;
+
   const [documents, setDocuments] = useState<DocumentItem[]>([]);
   const [documentTypes, setDocumentTypes] = useState<DocumentTypeItem[]>([]);
+  const [workers, setWorkers] = useState<WorkerOption[]>([]);
+  const [selectedWorker, setSelectedWorker] = useState<WorkerOption | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [uploadModalOpen, setUploadModalOpen] = useState<boolean>(false);
+
+  const isContractorAdmin = user?.role === 'contractor_admin' || user?.role === 'contractor';
 
   const loadData = useCallback(async (showToast = false) => {
     try {
       if (showToast) setIsRefreshing(true);
       else setIsLoading(true);
 
-      const [docs, types] = await Promise.all([
-        apiClient.getMyDocuments(),
+      const promises: [Promise<DocumentItem[]>, Promise<DocumentTypeItem[]>] = [
+        apiClient.getMyDocuments(workerIdFilter ? { worker_id: workerIdFilter } : undefined),
         apiClient.getDocumentTypes(),
-      ]);
+      ];
 
+      const [docs, types] = await Promise.all(promises);
       setDocuments(docs);
       setDocumentTypes(types);
+
+      // If user is contractor admin, fetch their crew to populate worker options
+      if (isContractorAdmin) {
+        try {
+          const company = await apiClient.getMyContractorCompany();
+          if (company?.id) {
+            const crew = await apiClient.listContractorWorkers(company.id);
+            const formattedWorkers: WorkerOption[] = crew.map((w) => ({
+              id: w.worker_id,
+              name: w.full_name,
+              curp: w.curp,
+              jobTitle: w.job_title,
+            }));
+            setWorkers(formattedWorkers);
+
+            if (workerIdFilter) {
+              const matched = formattedWorkers.find((w) => w.id === workerIdFilter);
+              setSelectedWorker(matched || null);
+            } else {
+              setSelectedWorker(null);
+            }
+          }
+        } catch {
+          // Non-blocking if company query fails
+        }
+      }
 
       if (showToast) {
         toast.success('Lista de documentos actualizada');
@@ -57,7 +94,7 @@ function DocumentosContent() {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, []);
+  }, [workerIdFilter, isContractorAdmin]);
 
   useEffect(() => {
     loadData();
@@ -98,29 +135,17 @@ function DocumentosContent() {
           </div>
 
           <div className="flex items-center gap-2 sm:gap-4">
+            <ThemeToggle />
+
             {isGuard && (
               <Link href="/caseta">
                 <Button
                   size="sm"
                   variant="outline"
-                  className="border-slate-700 text-slate-300 hover:text-white hover:bg-slate-800 text-xs gap-1.5"
+                  className="border-cyan-500/30 text-cyan-400 hover:bg-cyan-950/30 h-9 px-3 gap-1.5"
                 >
-                  <ArrowLeft className="w-3.5 h-3.5" />
-                  Volver a Caseta
-                </Button>
-              </Link>
-            )}
-
-            {isPlantAdmin && (
-              <Link href="/reportes">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="border-indigo-800/60 bg-indigo-950/40 text-indigo-300 hover:text-white hover:bg-indigo-900/60 text-xs gap-1.5"
-                  title="Panel de Reportes y Métricas STPS"
-                >
-                  <BarChart3 className="w-3.5 h-3.5 text-indigo-400" />
-                  <span className="hidden sm:inline">Panel Admin</span>
+                  <QrCode className="w-4 h-4" />
+                  <span className="hidden sm:inline">Caseta</span>
                 </Button>
               </Link>
             )}
@@ -130,10 +155,10 @@ function DocumentosContent() {
                 <Button
                   size="sm"
                   variant="outline"
-                  className="border-amber-800/60 bg-amber-950/30 text-amber-300 hover:text-white hover:bg-amber-900/50 text-xs gap-1.5"
+                  className="border-emerald-500/30 text-emerald-400 hover:bg-emerald-950/30 h-9 px-3 gap-1.5"
                 >
-                  <FileStack className="w-3.5 h-3.5 text-amber-400" />
-                  Bandeja EHS
+                  <FileStack className="w-4 h-4" />
+                  <span className="hidden sm:inline">Mesa EHS</span>
                 </Button>
               </Link>
             )}
@@ -142,41 +167,20 @@ function DocumentosContent() {
               <Button
                 size="sm"
                 variant="outline"
-                className="border-slate-700 text-blue-300 hover:text-white hover:bg-slate-800 text-xs gap-1.5"
-                title="Padrón de Contratistas y Cuadrillas"
+                className="border-slate-700 text-slate-300 hover:text-white hover:bg-slate-800 h-9 px-3 gap-1.5"
               >
-                <Building2 className="w-3.5 h-3.5 text-blue-400" />
+                <Building2 className="w-4 h-4" />
                 <span className="hidden sm:inline">Contratistas</span>
               </Button>
             </Link>
 
-            <Link href="/credencial">
-              <Button
-                size="sm"
-                variant="outline"
-                className="border-slate-700 text-cyan-300 hover:text-white hover:bg-slate-800 text-xs gap-1.5"
-                title="Ver Credencial Móvil con Código QR"
-              >
-                <QrCode className="w-3.5 h-3.5 text-cyan-400" />
-                <span className="hidden sm:inline">Mi Credencial</span>
-              </Button>
-            </Link>
-
-            {/* Theme Toggle */}
-            <ThemeToggle />
-
-            {/* User Profile Pill */}
-            <Link
-              href="/perfil"
-              className="flex items-center gap-2 px-2.5 py-1 rounded-xl border border-slate-800 bg-slate-900 hover:bg-slate-800 hover:border-slate-700 transition-colors"
-              title="Ver Mi Perfil"
-            >
-              <div className="h-6 w-6 rounded-lg bg-slate-800 text-slate-200 font-bold text-[10px] flex items-center justify-center border border-slate-700 overflow-hidden relative">
+            <Link href="/perfil" className="flex items-center gap-2 p-1 rounded-lg hover:bg-slate-800/60 transition-colors">
+              <div className="w-8 h-8 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center font-bold text-xs shrink-0 overflow-hidden">
                 {user?.id && (
                   <img
-                    src={`/api/v1/users/${user.id}/avatar`}
-                    alt={user.full_name || 'Usuario'}
-                    className="w-full h-full object-cover absolute inset-0"
+                    src={apiClient.getUserAvatarUrl(user.id)}
+                    alt=""
+                    className="w-full h-full object-cover"
                     onError={(e) => {
                       (e.target as HTMLElement).style.display = 'none';
                     }}
@@ -205,6 +209,53 @@ function DocumentosContent() {
 
       {/* Main Content */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        {/* Active Worker Filter Banner */}
+        {workerIdFilter && (
+          <div className="p-4 rounded-xl border border-emerald-800/40 bg-emerald-950/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-lg">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shrink-0">
+                <UserCheck className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-semibold text-white text-sm">
+                    Expediente del Trabajador: {selectedWorker ? selectedWorker.name : 'Personal Asignado'}
+                  </h3>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 font-mono border border-emerald-500/20">
+                    Filtro Individual
+                  </span>
+                </div>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  {selectedWorker?.jobTitle && `${selectedWorker.jobTitle} • `}
+                  {selectedWorker?.curp && `CURP: ${selectedWorker.curp}`}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Link href="/documentos">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="border-slate-700 text-slate-300 hover:text-white hover:bg-slate-800 text-xs h-8"
+                >
+                  Ver todos los documentos
+                </Button>
+              </Link>
+              <Link href="/contratistas">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="border-slate-700 text-slate-300 hover:text-white hover:bg-slate-800 text-xs h-8 gap-1"
+                >
+                  <Users className="w-3.5 h-3.5" />
+                  Cuadrilla
+                </Button>
+              </Link>
+            </div>
+          </div>
+        )}
+
         {/* Page Title & Actions */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
@@ -268,6 +319,8 @@ function DocumentosContent() {
         onOpenChange={setUploadModalOpen}
         documentTypes={documentTypes}
         onUploadSuccess={handleUploadSuccess}
+        defaultWorkerId={workerIdFilter}
+        workers={workers}
       />
     </div>
   );
@@ -276,7 +329,15 @@ function DocumentosContent() {
 export default function DocumentosPage() {
   return (
     <ProtectedRoute>
-      <DocumentosContent />
+      <Suspense
+        fallback={
+          <div className="min-h-screen bg-slate-950 flex items-center justify-center text-slate-400 font-mono text-xs">
+            Cargando expediente documental...
+          </div>
+        }
+      >
+        <DocumentosContent />
+      </Suspense>
     </ProtectedRoute>
   );
 }
