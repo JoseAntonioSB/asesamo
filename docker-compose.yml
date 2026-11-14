@@ -70,7 +70,12 @@ services:
     entrypoint:
       - sh
       - -c
-      - PGPASSWORD="$${POSTGRES_PASSWORD}" psql -h db -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}" -v ON_ERROR_STOP=1 -f /seeds/000001_seed_dev_data.sql
+      - |
+        for f in /seeds/*.sql; do
+          echo "==> Seeding: $$f"
+          PGPASSWORD="$${POSTGRES_PASSWORD}" psql -h db -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}" -v ON_ERROR_STOP=1 -f "$$f" || exit 1
+        done
+        echo "✔ All seeds applied successfully."
     networks:
       - asesamo-net
 

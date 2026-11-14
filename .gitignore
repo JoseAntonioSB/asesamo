@@ -22,6 +22,8 @@ Thumbs.db
 
 # Logs and Debugging
 *.log
+.logs/
+.pids/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*

@@ -105,7 +105,10 @@ migrate-force:
 seed:
 	@echo "==> Seeding database with deterministic dev/test data..."
 	@if docker compose ps db --format '{{.State}}' 2>/dev/null | grep -q "running"; then \
-		docker compose exec -T -e PGPASSWORD="$$DB_PASSWORD" db psql -U "$$DB_USER" -d "$$DB_NAME" < db/seeds/000001_seed_dev_data.sql; \
+		for f in db/seeds/*.sql; do \
+			echo "--> Applying $$f..."; \
+			docker compose exec -T -e PGPASSWORD="$$DB_PASSWORD" db psql -U "$$DB_USER" -d "$$DB_NAME" < "$$f" || exit 1; \
+		done; \
 	else \
 		echo "✖ Error: db container is not running. Run 'make docker-up' first."; \
 		exit 1; \
