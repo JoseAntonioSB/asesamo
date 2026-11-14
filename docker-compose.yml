@@ -24,7 +24,7 @@ services:
       - asesamo_pgdata:/var/lib/postgresql/data
       - ./db/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-asesamo_admin} -d ${DB_NAME:-asesamo_db} -h localhost"]
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER:-asesamo_admin} -d ${DB_NAME:-asesamo_db} -h localhost" ]
       interval: 3s
       timeout: 3s
       retries: 5
@@ -48,7 +48,7 @@ services:
       - -path=/migrations
       - -database=${DOCKER_DATABASE_URL:-postgres://${DB_USER:-asesamo_admin}:${DB_PASSWORD:-asesamo_secret_dev}@db:5432/${DB_NAME:-asesamo_db}?sslmode=disable}
       - -verbose
-    command: ["up"]
+    command: [ "up" ]
     networks:
       - asesamo-net
 
@@ -102,7 +102,7 @@ services:
       APP_PORT: 8080
       DATABASE_URL: ${DOCKER_DATABASE_URL:-postgres://${DB_USER:-asesamo_admin}:${DB_PASSWORD:-asesamo_secret_dev}@db:5432/${DB_NAME:-asesamo_db}?sslmode=disable}
       JWT_SECRET: ${JWT_SECRET:-super_secret_jwt_key_min_32_characters_long_12345}
-      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000,http://web:3000}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000,http://localhost:3100,http://127.0.0.1:3100,http://web:3000}
       STORAGE_PATH: ${STORAGE_PATH:-/app/uploads}
       R2_ACCOUNT_ID: ${R2_ACCOUNT_ID:-mock_account}
       R2_ACCESS_KEY_ID: ${R2_ACCESS_KEY_ID:-mock_key}
@@ -111,7 +111,7 @@ services:
     volumes:
       - asesamo_uploads:/app/uploads
     healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/api/v1/health || curl -f http://localhost:8080/api/v1/health || exit 1"]
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/api/v1/health || curl -f http://localhost:8080/api/v1/health || exit 1" ]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -131,7 +131,7 @@ services:
     container_name: asesamo-web
     restart: unless-stopped
     ports:
-      - "${WEB_PORT:-3000}:3000"
+      - "${WEB_PORT:-3100}:3000"
     depends_on:
       api:
         condition: service_healthy
@@ -141,7 +141,7 @@ services:
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8080/api/v1}
       INTERNAL_API_URL: ${INTERNAL_API_URL:-http://api:8080/api/v1}
     healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1:3000/login || wget --no-verbose --tries=1 --spider http://127.0.0.1:3000 || exit 1"]
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1:3000/login || wget --no-verbose --tries=1 --spider http://127.0.0.1:3000 || exit 1" ]
       interval: 5s
       timeout: 5s
       retries: 5

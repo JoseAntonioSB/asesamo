@@ -19,8 +19,8 @@ import { UploadCloud, FileText, CheckCircle2, AlertCircle, Loader2, UserCheck } 
 export interface WorkerOption {
   id: string;
   name: string;
-  curp?: string;
-  jobTitle?: string;
+  curp?: string | null;
+  jobTitle?: string | null;
 }
 
 interface DocumentUploadModalProps {

@@ -16,6 +16,7 @@ import (
 	"asesamo-api/internal/adapter/http/handler"
 	"asesamo-api/internal/adapter/postgres"
 	"asesamo-api/internal/adapter/storage"
+	"asesamo-api/internal/core/domain/repository"
 	"asesamo-api/internal/core/domain/service"
 	"asesamo-api/internal/core/usecase/access"
 	"asesamo-api/internal/core/usecase/auth"
@@ -80,9 +81,28 @@ func main() {
 
 	complianceEngine := service.NewComplianceEngine(complianceRepo)
 
-	storageService, err := storage.NewLocalStorageService(cfg.StorageDir)
-	if err != nil {
-		log.Fatalf("Fatal storage error: %v", err)
+	var storageService repository.StorageService
+	if cfg.StorageDriver == "r2" {
+		log.Printf("INFO: Initializing Cloudflare R2 Object Storage (Bucket: %s, Account: %s)", cfg.R2BucketName, cfg.R2AccountID)
+		r2Svc, err := storage.NewR2StorageService(storage.R2Config{
+			AccountID:       cfg.R2AccountID,
+			AccessKeyID:     cfg.R2AccessKeyID,
+			SecretAccessKey: cfg.R2SecretAccessKey,
+			BucketName:      cfg.R2BucketName,
+			Endpoint:        cfg.R2Endpoint,
+			PublicURL:       cfg.R2PublicURL,
+		})
+		if err != nil {
+			log.Fatalf("Fatal R2 storage error: %v", err)
+		}
+		storageService = r2Svc
+	} else {
+		log.Printf("INFO: Initializing Local Disk Storage Adapter (Dir: %s)", cfg.StorageDir)
+		localSvc, err := storage.NewLocalStorageService(cfg.StorageDir)
+		if err != nil {
+			log.Fatalf("Fatal local storage error: %v", err)
+		}
+		storageService = localSvc
 	}
 
 	// Use cases (core business logic)

@@ -12,6 +12,17 @@ set -o pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
+# Load environment configuration if present
+if [ -f "$SCRIPT_DIR/.env" ]; then
+    # shellcheck disable=SC1090
+    set -a
+    source "$SCRIPT_DIR/.env"
+    set +a
+fi
+
+WEB_PORT="${WEB_PORT:-3100}"
+API_PORT="${API_PORT:-8080}"
+
 # PID and log files for local execution
 PID_DIR="$SCRIPT_DIR/.pids"
 LOG_DIR="$SCRIPT_DIR/.logs"
@@ -132,10 +143,10 @@ display_credentials() {
     echo -e "${BOLD}${GREEN}================================================================${RESET}\n"
 
     echo -e "${BOLD}Puntos de Acceso:${RESET}"
-    echo -e "  • ${BOLD}Frontend Web:${RESET}       ${CYAN}http://localhost:3000${RESET}"
-    echo -e "  • ${BOLD}Backend REST API:${RESET}   ${CYAN}http://localhost:8080/api/v1${RESET}"
-    echo -e "  • ${BOLD}Healthcheck API:${RESET}    ${CYAN}http://localhost:8080/api/v1/health${RESET}"
-    echo -e "  • ${BOLD}SSE Real-Time Hub:${RESET}  ${CYAN}http://localhost:8080/api/v1/realtime/events${RESET}"
+    echo -e "  • ${BOLD}Frontend Web:${RESET}       ${CYAN}http://localhost:${WEB_PORT}${RESET}"
+    echo -e "  • ${BOLD}Backend REST API:${RESET}   ${CYAN}http://localhost:${API_PORT}/api/v1${RESET}"
+    echo -e "  • ${BOLD}Healthcheck API:${RESET}    ${CYAN}http://localhost:${API_PORT}/api/v1/health${RESET}"
+    echo -e "  • ${BOLD}SSE Real-Time Hub:${RESET}  ${CYAN}http://localhost:${API_PORT}/api/v1/realtime/events${RESET}"
     echo -e "  • ${BOLD}Base de Datos:${RESET}      ${CYAN}localhost:5432 (asesamo_db / asesamo_admin)${RESET}\n"
 
     echo -e "${BOLD}Cuentas Semilla Preconfiguradas (Password para todas: ${YELLOW}Password123!${RESET}):${RESET}"
@@ -188,10 +199,10 @@ start_docker() {
     fi
 
     # 2. Check API health
-    wait_for_http "http://localhost:8080/api/v1/health" "API Go Clean Architecture" 25 2 || log_warn "API tardó en responder. Verifique con ./start.sh --logs"
+    wait_for_http "http://localhost:${API_PORT}/api/v1/health" "API Go Clean Architecture" 25 2 || log_warn "API tardó en responder. Verifique con ./start.sh --logs"
 
     # 3. Check Web health
-    wait_for_http "http://localhost:3000/login" "Frontend Next.js 14" 30 2 || log_warn "Frontend web tardó en responder. Verifique con ./start.sh --logs"
+    wait_for_http "http://localhost:${WEB_PORT}/login" "Frontend Next.js 14" 30 2 || log_warn "Frontend web tardó en responder. Verifique con ./start.sh --logs"
 
     display_credentials
 }
@@ -256,10 +267,10 @@ start_local() {
     mkdir -p bin
     go build -o bin/api cmd/api/main.go
     APP_ENV=development \
-    APP_PORT=8080 \
+    APP_PORT="${API_PORT}" \
     DATABASE_URL="postgres://asesamo_admin:asesamo_secret_dev@localhost:5432/asesamo_db?sslmode=disable" \
     JWT_SECRET="super_secret_jwt_key_min_32_characters_long_12345" \
-    CORS_ALLOWED_ORIGINS="http://localhost:3000,http://127.0.0.1:3000" \
+    CORS_ALLOWED_ORIGINS="http://localhost:${WEB_PORT},http://127.0.0.1:${WEB_PORT},http://localhost:3000,http://127.0.0.1:3000" \
     STORAGE_PATH="$SCRIPT_DIR/uploads" \
     ./bin/api > "$API_LOG_FILE" 2>&1 &
 
@@ -288,19 +299,19 @@ start_local() {
         npm install
     fi
 
-    PORT=3000 \
-    NEXT_PUBLIC_API_URL="http://localhost:8080/api/v1" \
-    npm run dev > "$WEB_LOG_FILE" 2>&1 &
+    PORT="${WEB_PORT}" \
+    NEXT_PUBLIC_API_URL="http://localhost:${API_PORT}/api/v1" \
+    npm run dev -- -p "${WEB_PORT}" > "$WEB_LOG_FILE" 2>&1 &
 
     local web_pid=$!
     echo "$web_pid" > "$WEB_PID_FILE"
-    log_success "asesamo-web corriendo en segundo plano (PID: $web_pid, Log: .logs/web.log)"
+    log_success "asesamo-web corriendo en segundo plano (PID: $web_pid, Puerto: $WEB_PORT, Log: .logs/web.log)"
 
     cd "$SCRIPT_DIR"
 
     # Wait for HTTP endpoints
-    wait_for_http "http://localhost:8080/api/v1/health" "API Go (Local)" 20 1 || log_warn "API tardó en iniciar. Revise .logs/api.log"
-    wait_for_http "http://localhost:3000/login" "Next.js Web (Local)" 25 1 || log_warn "Web tardó en iniciar. Revise .logs/web.log"
+    wait_for_http "http://localhost:${API_PORT}/api/v1/health" "API Go (Local)" 20 1 || log_warn "API tardó en iniciar. Revise .logs/api.log"
+    wait_for_http "http://localhost:${WEB_PORT}/login" "Next.js Web (Local)" 25 1 || log_warn "Web tardó en iniciar. Revise .logs/web.log"
 
     display_credentials
 
@@ -335,11 +346,17 @@ stop_all() {
 
     # Clean any rogue node/go listeners on standard ports
     if check_command lsof; then
-        local p8080
-        p8080=$(lsof -ti:8080 2>/dev/null || true)
-        if [ -n "$p8080" ]; then
-            log_info "Liberando puerto 8080 (PID: $p8080)..."
-            kill "$p8080" 2>/dev/null || true
+        local p_api
+        p_api=$(lsof -ti:"${API_PORT}" 2>/dev/null || true)
+        if [ -n "$p_api" ]; then
+            log_info "Liberando puerto ${API_PORT} (PID: $p_api)..."
+            kill "$p_api" 2>/dev/null || true
+        fi
+        local p_web
+        p_web=$(lsof -ti:"${WEB_PORT}" 2>/dev/null || true)
+        if [ -n "$p_web" ]; then
+            log_info "Liberando puerto ${WEB_PORT} (PID: $p_web)..."
+            kill "$p_web" 2>/dev/null || true
         fi
     fi
 
@@ -397,21 +414,21 @@ show_status() {
     # API Health
     if check_command curl; then
         local api_health
-        api_health=$(curl -s -o /dev/null -w "%{http_code}" -m 2 http://localhost:8080/api/v1/health 2>/dev/null || echo "000")
+        api_health=$(curl -s -o /dev/null -w "%{http_code}" -m 2 "http://localhost:${API_PORT}/api/v1/health" 2>/dev/null || echo "000")
         api_health="${api_health: -3}"
         if [ "$api_health" = "200" ]; then
-            echo -e "  • Puerto 8080 (API):  ${GREEN}ONLINE (HTTP 200 OK)${RESET}"
+            echo -e "  • Puerto ${API_PORT} (API):  ${GREEN}ONLINE (HTTP 200 OK)${RESET}"
         else
-            echo -e "  • Puerto 8080 (API):  ${RED}OFFLINE${RESET}"
+            echo -e "  • Puerto ${API_PORT} (API):  ${RED}OFFLINE${RESET}"
         fi
 
         local web_health
-        web_health=$(curl -s -o /dev/null -w "%{http_code}" -m 2 http://localhost:3000/login 2>/dev/null || echo "000")
+        web_health=$(curl -s -o /dev/null -w "%{http_code}" -m 2 "http://localhost:${WEB_PORT}/login" 2>/dev/null || echo "000")
         web_health="${web_health: -3}"
         if [ "$web_health" = "200" ]; then
-            echo -e "  • Puerto 3000 (Web):  ${GREEN}ONLINE (HTTP 200 OK)${RESET}"
+            echo -e "  • Puerto ${WEB_PORT} (Web):  ${GREEN}ONLINE (HTTP 200 OK)${RESET}"
         else
-            echo -e "  • Puerto 3000 (Web):  ${RED}OFFLINE${RESET}"
+            echo -e "  • Puerto ${WEB_PORT} (Web):  ${RED}OFFLINE${RESET}"
         fi
     fi
     echo ""

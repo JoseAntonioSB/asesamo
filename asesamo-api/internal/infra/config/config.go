@@ -27,6 +27,15 @@ type Config struct {
 	CORSAllowedOrigins []string
 	StoragePath        string
 	StorageDir         string
+
+	// Storage Driver & Cloudflare R2
+	StorageDriver     string
+	R2AccountID       string
+	R2AccessKeyID     string
+	R2SecretAccessKey string
+	R2BucketName      string
+	R2Endpoint        string
+	R2PublicURL       string
 }
 
 // LoadFromEnv loads configuration from environment variables and validates all required fields.
@@ -68,6 +77,22 @@ func LoadFromEnv() (*Config, error) {
 		storageDir = "./uploads"
 	}
 
+	storageDriver := strings.ToLower(strings.TrimSpace(os.Getenv("STORAGE_DRIVER")))
+	r2AccountID := strings.TrimSpace(os.Getenv("R2_ACCOUNT_ID"))
+	r2AccessKeyID := strings.TrimSpace(os.Getenv("R2_ACCESS_KEY_ID"))
+	r2SecretAccessKey := strings.TrimSpace(os.Getenv("R2_SECRET_ACCESS_KEY"))
+	r2BucketName := strings.TrimSpace(os.Getenv("R2_BUCKET_NAME"))
+	r2Endpoint := strings.TrimSpace(os.Getenv("R2_ENDPOINT"))
+	r2PublicURL := strings.TrimSpace(os.Getenv("R2_PUBLIC_URL"))
+
+	if storageDriver == "" {
+		if r2AccessKeyID != "" && r2AccessKeyID != "mock_key" && r2SecretAccessKey != "" && r2SecretAccessKey != "mock_secret" {
+			storageDriver = "r2"
+		} else {
+			storageDriver = "local"
+		}
+	}
+
 	cfg := &Config{
 		DatabaseURL:        os.Getenv("DATABASE_URL"),
 		AppPort:            port,
@@ -76,6 +101,13 @@ func LoadFromEnv() (*Config, error) {
 		CORSAllowedOrigins: corsOrigins,
 		StoragePath:        storageDir,
 		StorageDir:         storageDir,
+		StorageDriver:      storageDriver,
+		R2AccountID:        r2AccountID,
+		R2AccessKeyID:      r2AccessKeyID,
+		R2SecretAccessKey:  r2SecretAccessKey,
+		R2BucketName:       r2BucketName,
+		R2Endpoint:         r2Endpoint,
+		R2PublicURL:        r2PublicURL,
 	}
 
 	if err := cfg.Validate(); err != nil {
@@ -115,6 +147,22 @@ func (c *Config) Validate() error {
 		// Valid
 	default:
 		errs = append(errs, fmt.Sprintf("APP_ENV must be one of ['development', 'staging', 'production', 'test'], got %q", c.AppEnv))
+	}
+
+	// Validate Storage Driver
+	if c.StorageDriver == "r2" {
+		if c.R2AccessKeyID == "" {
+			errs = append(errs, "R2_ACCESS_KEY_ID is required when STORAGE_DRIVER is 'r2'")
+		}
+		if c.R2SecretAccessKey == "" {
+			errs = append(errs, "R2_SECRET_ACCESS_KEY is required when STORAGE_DRIVER is 'r2'")
+		}
+		if c.R2BucketName == "" {
+			errs = append(errs, "R2_BUCKET_NAME is required when STORAGE_DRIVER is 'r2'")
+		}
+		if c.R2AccountID == "" && c.R2Endpoint == "" {
+			errs = append(errs, "R2_ACCOUNT_ID or R2_ENDPOINT is required when STORAGE_DRIVER is 'r2'")
+		}
 	}
 
 	if len(errs) > 0 {

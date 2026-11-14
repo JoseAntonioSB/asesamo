@@ -126,6 +126,28 @@ func TestValidate_Errors(t *testing.T) {
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "APP_ENV must be one of")
 	})
+
+	t.Run("r2 validation when storage driver is r2", func(t *testing.T) {
+		cfg := &config.Config{
+			DatabaseURL:   "postgres://localhost:5432/db",
+			AppPort:       8080,
+			JWTSecret:     "super_secret_jwt_key_min_32_characters_long_12345",
+			AppEnv:        "development",
+			StorageDriver: "r2",
+		}
+		err := cfg.Validate()
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "R2_ACCESS_KEY_ID is required")
+		assert.Contains(t, err.Error(), "R2_SECRET_ACCESS_KEY is required")
+		assert.Contains(t, err.Error(), "R2_BUCKET_NAME is required")
+
+		// Fully populated R2 config succeeds
+		cfg.R2AccessKeyID = "key"
+		cfg.R2SecretAccessKey = "secret"
+		cfg.R2BucketName = "bucket"
+		cfg.R2AccountID = "acc"
+		assert.NoError(t, cfg.Validate())
+	})
 }
 
 func TestMaskedDatabaseURL_EmptyOrInvalid(t *testing.T) {
